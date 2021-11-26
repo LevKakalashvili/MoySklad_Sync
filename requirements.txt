@@ -1,0 +1,9 @@
+pybase64
+requests
+google-api-python-client
+httplib2
+oauth2client
+xlwt
+openpyxl
+pandas
+pyTelegramBotAPI
