@@ -4,7 +4,22 @@ import pandas as pd
 import datetime
 
 
+
+def remove_file(file_name: str):
+    try:
+        if file_name != '' and os.path.isfile(file_name):
+            os.remove(file_name)
+    except Exception as error:
+        pass
+
 def save_to_excel(file_name: str, data: list, add_date=True) -> str:
+    """
+    Функция сохранения в файл excel
+    :param file_name:
+    :param data:
+    :param add_date:
+    :return: Имя файла
+    """
     if len(data) == 0:
         return ''
     try:
@@ -24,6 +39,7 @@ def save_to_excel(file_name: str, data: list, add_date=True) -> str:
 
 
 def save_to_txt(file_name: str, data: list, add_date=True) -> int:
+    """ Сохранение в текстовый файл"""
     if len(data) == 0:
         return -1
     try:
@@ -40,7 +56,7 @@ def save_to_txt(file_name: str, data: list, add_date=True) -> int:
             line_ = ''.join(str(line))
             f.write(line_ + '\n')
         f.close()
-        # удаляем "вчрашний файл"
+        # удаляем "вчерашний" файл
         if remove_file_name != '' and os.path.isfile(remove_file_name):
             os.remove(remove_file_name)
     except Exception as error:
