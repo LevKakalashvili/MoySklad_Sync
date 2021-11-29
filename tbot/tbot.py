@@ -37,6 +37,8 @@ def start_message(message):
         if send_file != '':
             # отправляем файл
             bot.send_document(message.chat.id, open(send_file, "rb"))
+            # удаляем отправленный файл с диска
+            utils.file_utils.remove_file(send_file)
         else:
             bot.send_message(message.chat.id, "Не удалось подготовить файл")
 
