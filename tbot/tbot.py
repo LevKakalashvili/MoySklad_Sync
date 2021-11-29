@@ -20,7 +20,7 @@ def start_message(message):
         sold_goods = ms.get_retail_demand_by_period(
             str(datetime.datetime.now().date() - datetime.timedelta(days=1)) + ' 00:00:00',
             str(datetime.datetime.now().date() - datetime.timedelta(days=1)) + ' 23:59:00')
-        # корректироуем список в соотвествиие, удаляем из списка проданных товаров, то что не нужно списывать в ЕГАИС
+        # корректироуем список, удаляем из списка проданных товаров, то что не нужно списывать в ЕГАИС
         sold_goods = ms.get_goods_for_egais(sold_goods)
 
         gs = gs_class_lib.GoogleSheets()
@@ -39,6 +39,7 @@ def start_message(message):
             bot.send_document(message.chat.id, open(send_file, "rb"))
         else:
             bot.send_message(message.chat.id, "Не удалось подготовить файл")
+
     except Exception as error:
         bot.send_message(message.chat.id, "Не удалось подготовить файл")
 
