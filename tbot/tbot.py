@@ -2,13 +2,14 @@
 import telebot
 
 import datetime
-import tbot_privatedata
+import tbot.tbot_privatedata as tbp
 import moysklad.moysklad_class_lib as ms_class_lib
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
 import utils.file_utils
 
-bot = telebot.TeleBot(tbot_privatedata.TOKEN,  parse_mode = None)
+
+bot = telebot.TeleBot(tbp.TOKEN,  parse_mode = None)
 
 
 @bot.message_handler(commands=['egais'])
@@ -44,6 +45,9 @@ def start_message(message):
 
     except Exception as error:
         bot.send_message(message.chat.id, "Не удалось подготовить файл")
+
+def run():
+    bot.polling(none_stop=True)
 
 
 if __name__ == '__main__':
