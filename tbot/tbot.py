@@ -7,6 +7,7 @@ import moysklad.moysklad_class_lib as ms_class_lib
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
 import utils.file_utils
+import os
 
 
 bot = telebot.TeleBot(tbp.TOKEN,  parse_mode = None)
