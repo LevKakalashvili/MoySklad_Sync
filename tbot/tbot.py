@@ -34,7 +34,7 @@ def start_message(message):
         compl_table_egais = ms.get_goods_compliance_egais(sold_goods, compl_table_egais)
 
         # сохраняем списания для ЕГАИС в файл. ссылку на excel, отправляем в чат
-        send_file = utils.file_utils.save_to_excel(f'../Списание_ЕГАИС', compl_table_egais)
+        send_file = utils.file_utils.save_to_excel(os.path.abspath(os.curdir) + '\\Списание_ЕГАИС', compl_table_egais)
         if send_file != '':
             # отправляем файл
             bot.send_document(message.chat.id, open(send_file, "rb"))
@@ -51,4 +51,4 @@ def run():
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    run()

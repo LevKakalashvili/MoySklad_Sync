@@ -26,9 +26,9 @@ class MoySklad(object):
         upd_sold_goods =[]
         try:
             for sold_good in sold_goods:
-                if str(sold_good[0]) == 'План Б - Parhelion' or str(sold_good[0]) == 'Aircraft - Шоколадный Стаут':
-                    # Aircraft - Шоколадный Стаут
-                    a = -1
+                # if str(sold_good[0]) == 'План Б - Parhelion' or str(sold_good[0]) == 'Aircraft - Шоколадный Стаут':
+                #     # Aircraft - Шоколадный Стаут
+                #     a = -1
                 start_ind = 0
                 end_ind = len(comp_table) - 1
                 mid_ind = len(comp_table) // 2
@@ -146,7 +146,7 @@ class MoySklad(object):
         exclude_words = []
         try:
             # заполняем список слов исключений
-            with open('../moysklad/moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
+            with open(os.path.abspath(os.curdir) + '\\moysklad\\moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
                 for line in file:
                     if not (line[0] in ['#', '', ' ', '\n']):
                         exclude_words.append(line.replace('\n', '').lower())
