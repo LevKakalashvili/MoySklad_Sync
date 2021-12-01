@@ -5,3 +5,12 @@
 /googledrive/googledrive_credentials.json
 /tbot/tbot_privatedata.py
 /pyvenv.cfg
+.idea/
+Lib/
+Scripts/
+googledrive/__pycache__/
+moysklad/__pycache__/
+moysklad/maincode.py
+tbot/__pycache__/
+utils/__pycache__/
+
