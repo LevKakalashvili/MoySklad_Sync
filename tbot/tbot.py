@@ -1,16 +1,19 @@
 # пример кода взят https://habr.com/ru/post/580408/
 import logger_config
+import project_settings
 import telebot
-
 import datetime
-import tbot_privatedata
+import os, sys
+import logging
+import logging.config
+
+sys.path.insert(1, project_settings.PROJECT_PATH)
+
+import tbot.tbot_privatedata as tbot_privatedata
 import moysklad.moysklad_class_lib as ms_class_lib
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
 import utils.file_utils
-import os
-import logging
-import logging.config
 
 
 logging.config.dictConfig(logger_config.LOGGING_CONF)

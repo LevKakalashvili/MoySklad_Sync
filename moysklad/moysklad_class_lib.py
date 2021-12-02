@@ -1,16 +1,19 @@
 """ В модуле хранится описание классов.
 
 """
-
-import moysklad.moysklad_privatedata as ms_pvdata
-import moysklad.moysklad_lib as ms_lib
-import moysklad.moysklad_urls as ms_urls
 import requests
 import os
 import logging
 import logging.config
 import logger_config
 import project_settings
+
+sys.path.insert(1, project_settings.PROJECT_PATH)
+
+import moysklad.moysklad_privatedata as ms_pvdata
+import moysklad.moysklad_lib as ms_lib
+import moysklad.moysklad_urls as ms_urls
+
 
 
 class MoySklad(object):
