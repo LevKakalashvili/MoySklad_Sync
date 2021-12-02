@@ -21,7 +21,7 @@ class GoogleSheets(object):
     def get_access(self) -> int:
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
-            os.path.dirname(__file__) + '\\' + gs_vars.CREDENTIALS_FILE,
+            os.path.dirname(__file__) + '/' + gs_vars.CREDENTIALS_FILE,
             ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
         http_auth = credentials.authorize(httplib2.Http())
         self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
