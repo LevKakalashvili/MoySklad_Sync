@@ -7,16 +7,33 @@ import moysklad.moysklad_lib as ms_lib
 import moysklad.moysklad_urls as ms_urls
 import requests
 import os
+import logging
+import logging.config
+import logger_config
+import project_settings
 
 
 class MoySklad(object):
     """ Класс описывает работу с сервисом МойСклад"""
     token = ''  # токен для работы с сервисом
+    logger = None
 
     def __init__(self):
-        self.token = ms_lib.get_access_token(ms_pvdata.USER, ms_pvdata.PASSWORD)
+        try:
+            self.token = ms_lib.get_access_token(ms_pvdata.USER, ms_pvdata.PASSWORD)
+            logging.config.dictConfig(logger_config.LOGGING_CONF)
+            self.logger = logging.getLogger("moysklad")
+        except Exception as error:
+            logger.exception(f"Не удалось создать инстанс MoySklad")
+
 
     def get_goods_compliance_egais(self, sold_goods: list, comp_table: list):
+        """
+        Метод сранивает два списка sold_goods и comp_table, возвращает новый sold_goods, c заполнеными наименованиями ЕГАИС
+        :param sold_goods:
+        :param comp_table:
+        :return:
+        """
         # sold_goods - отсортированый список кортежей
         # [(Наименование, Количество, Цена), (Наименование, Количество, Цена), ...]
         # comp_table - отсортированый список списков
@@ -140,35 +157,47 @@ class MoySklad(object):
                     В случае ошибки возвращаеься пустой список
                 :rtype: list
          """
-        if not goods:
-            return []
+        unsuccess = False
+
         # список слов исключений
         exclude_words = []
         try:
-            # заполняем список слов исключений
-            with open(os.path.abspath(os.curdir) + '\\moysklad\\moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
-                for line in file:
-                    if not (line[0] in ['#', '', ' ', '\n']):
-                        exclude_words.append(line.replace('\n', '').lower())
-            exclude_words = list(set(exclude_words))
+            if len(goods) == 0:
+                self.logger.error(f"Входной список товаров пустой: len(goods) = {len(goods)}")
+                unsuccess = True
+            else:
+                self.logger.debug(f"Входной список товаров: len(goods) = {len(goods)}")
 
-            # убираем из списка товаров, товары которые попадают в список исключений
-            i = 0
-            while i < len(goods):
-                # if goods[i][0].lower().find('варниц') != -1:
-                #     a = -1
-                for j in range(len(exclude_words)):
-                    # если список товаров передан списком кортежей [(Наименование, количество, цена), ... ]
-                    if goods[i][0].lower().find(exclude_words[j].lower()) != -1:
-                        goods.pop(i)
-                        i -= 1
-                # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
-                goods[i] = (goods[i][0].split(' (')[0], goods[i][1], goods[i][2])
-                i += 1
+            if not unsuccess:
+                self.logger.debug(f"Открывем файл исключений: {project_settings.PROJECT_PATH}\\moysklad\\moysklad_exclude_goods.txt")
+
+                # заполняем список слов исключений
+                with open(project_settings.PROJECT_PATH + '\\moysklad\\moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
+                    for line in file:
+                        if not (line[0] in ['#', '', ' ', '\n']):
+                            exclude_words.append(line.replace('\n', '').lower())
+                exclude_words = list(set(exclude_words))
+
+            if not unsuccess:
+                # убираем из списка товаров, товары которые попадают в список исключений
+                i = 0
+                while i < len(goods):
+                    # if goods[i][0].lower().find('варниц') != -1:
+                    #     a = -1
+                    for j in range(len(exclude_words)):
+                        # если список товаров передан списком кортежей [(Наименование, количество, цена), ... ]
+                        if goods[i][0].lower().find(exclude_words[j].lower()) != -1:
+                            goods.pop(i)
+                            i -= 1
+                    # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
+                    goods[i] = (goods[i][0].split(' (')[0], goods[i][1], goods[i][2])
+                    i += 1
 
             return sorted(goods)
         except FileNotFoundError:
             # запись в лог, файл не найден
+            self.logger.exception(f"Не удалось открыть файл исключений")
             return []
         except Exception as error:
+            self.logger.exception(f"Ошибка: " + error)
             return []  # возвращаем ошибку
