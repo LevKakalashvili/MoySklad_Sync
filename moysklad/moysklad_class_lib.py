@@ -2,7 +2,7 @@
 
 """
 import requests
-import os
+import os, sys
 import logging
 import logging.config
 import logger_config
