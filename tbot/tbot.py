@@ -92,7 +92,7 @@ def start_message(message):
             if send_file != '':
                 # отправляем файл
                 bot.send_document(message.chat.id, open(send_file, "rb"))
-                logger.error(f"Отправили файл в чат {send_file}")
+                logger.debug(f"Отправили файл в чат {send_file}")
                 # удаляем отправленный файл с диска
                 utils.file_utils.remove_file(send_file)
             else:
