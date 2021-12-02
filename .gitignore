@@ -1,7 +1,6 @@
 app.log
+project_settings.py
 /moysklad/moysklad_privatedata.py
-/shelf/
-/workspace.xml
 /googledrive/googledrive_credentials.json
 /googledrive/googledrive_credentials.json
 /tbot/tbot_privatedata.py
@@ -14,5 +13,7 @@ moysklad/__pycache__/
 moysklad/maincode.py
 tbot/__pycache__/
 utils/__pycache__/
+/shelf/
+/workspace.xml
 
 
