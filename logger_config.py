@@ -29,7 +29,7 @@ LOGGING_CONF = {
             "formatter": "verbose",
             "filename": "app.log",
             "encoding": "UTF-8",
-            "mode": "w"
+            "mode": "a"
         },
     },
     "loggers": {

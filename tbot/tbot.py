@@ -86,7 +86,7 @@ def start_message(message):
 
         if not unsuccess:
             # сохраняем списания для ЕГАИС в файл. ссылку на excel, отправляем в чат
-            send_file = utils.file_utils.save_to_excel(f'{os.path.abspath(os.curdir)}\\Списание_ЕГАИС', compl_table_egais)
+            send_file = utils.file_utils.save_to_excel(f'{os.path.abspath(os.curdir)}/Списание_ЕГАИС', compl_table_egais)
 
 
             if send_file != '':
