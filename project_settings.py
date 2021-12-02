@@ -1,1 +1,1 @@
-PROJECT_PATH = "D:\\my_python_projects\\MoySklad_Sync"
+PROJECT_PATH = "D:/my_python_projects/MoySklad_Sync"

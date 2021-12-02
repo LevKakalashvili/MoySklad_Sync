@@ -172,10 +172,10 @@ class MoySklad(object):
                 self.logger.debug(f"Входной список товаров: len(goods) = {len(goods)}")
 
             if not unsuccess:
-                self.logger.debug(f"Открывем файл исключений: {project_settings.PROJECT_PATH}\\moysklad\\moysklad_exclude_goods.txt")
+                self.logger.debug(f"Открывем файл исключений: {project_settings.PROJECT_PATH}/moysklad/moysklad_exclude_goods.txt")
 
                 # заполняем список слов исключений
-                with open(project_settings.PROJECT_PATH + '\\moysklad\\moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
+                with open(project_settings.PROJECT_PATH + '/moysklad/moysklad_exclude_goods.txt', 'r', encoding='utf-8') as file:
                     for line in file:
                         if not (line[0] in ['#', '', ' ', '\n']):
                             exclude_words.append(line.replace('\n', '').lower())
