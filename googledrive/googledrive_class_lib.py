@@ -21,7 +21,10 @@ class GoogleSheets(object):
     def get_access(self) -> int:
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
-            os.path.dirname(__file__) + '/' + gs_vars.CREDENTIALS_FILE,
+            # все приватные данные храним в папке /MoySklad/privatedata
+            os.path.join(os.path.dirname(os.path.dirname(__file__)),  # путь до /privatedata
+                         'privatedata',
+                         gs_vars.CREDENTIALS_FILE),
             ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
         http_auth = credentials.authorize(httplib2.Http())
         self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
@@ -63,3 +66,10 @@ class GoogleSheets(object):
         except Exception as error:
             error.error_details
             return []
+
+if __name__ == '__main__':
+    print(os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), # путь до /privatedata
+                'privatedata',
+                gs_vars.CREDENTIALS_FILE))
+    # os.path.join
