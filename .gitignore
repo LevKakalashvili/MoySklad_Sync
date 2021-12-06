@@ -1,9 +1,5 @@
 app.log
 project_settings.py
-/privatedata/moysklad_privatedata.py
-/googledrive/googledrive_credentials.json
-/googledrive/googledrive_credentials.json
-/privatedata/tbot_privatedata.py
 /pyvenv.cfg
 .idea/
 Lib/

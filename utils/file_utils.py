@@ -19,7 +19,7 @@ def save_to_excel(file_name: str, data: list, add_date=True) -> str:
     :param add_date:
     :return: Имя файла
     """
-    if len(data) == 0:
+    if not data:
         return ''
     try:
         if add_date:
@@ -39,7 +39,7 @@ def save_to_excel(file_name: str, data: list, add_date=True) -> str:
 
 def save_to_txt(file_name: str, data: list, add_date=True) -> int:
     """ Сохранение в текстовый файл"""
-    if len(data) == 0:
+    if not data:
         return -1
     try:
         if add_date:
@@ -50,11 +50,11 @@ def save_to_txt(file_name: str, data: list, add_date=True) -> int:
             new_file_name = file_name + '.txt'
             remove_file_name = ''
         # пишем данные в файл
-        f = open(new_file_name, 'w', encoding="utf-8")
-        for line in data:
-            line_ = ''.join(str(line))
-            f.write(line_ + '\n')
-        f.close()
+        with open(new_file_name, 'w', encoding="utf-8") as f:
+            for line in data:
+                line_ = ''.join(str(line))
+                f.write(line_ + '\n')
+
         # удаляем "вчерашний" файл
         if remove_file_name != '' and os.path.isfile(remove_file_name):
             os.remove(remove_file_name)

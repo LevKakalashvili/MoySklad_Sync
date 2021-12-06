@@ -11,65 +11,59 @@ import os
 # pip install oauth2client библиотека для авторизации
 
 
-class GoogleSheets(object):
+class GoogleSheets:
     """ Класс описывает работу с Google Sheets"""
     service = None
 
-    def __init__(self) -> object:
+    def __init__(self) -> None:
         self.get_access()
 
-    def get_access(self) -> int:
+    def get_access(self) -> bool:
+        """Метод получения доступа к GoogleSheets по API"""
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
-            # все приватные данные храним в папке /MoySklad/privatedata
+            # все приватные данные храним в папке /MoySklad_Sync/privatedata
             os.path.join(os.path.dirname(os.path.dirname(__file__)),  # путь до /privatedata
                          'privatedata',
                          gs_vars.CREDENTIALS_FILE),
-            ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
+            [gs_vars.SPREEDSHEETS_URL, gs_vars.GDRIVE_URL])
         http_auth = credentials.authorize(httplib2.Http())
         self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
 
         # проверяме получилось ли получить экземпляр сервиса
-        if self.service is not None:
-            return 0
+        if not (self.service is None):
+            return True
         else:
-            return -1
+            return False
 
     def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list:
         """
-
         :param spreadsheets_id: id таблицы в Google Sheets
-        :param list_name: имя, тестковое, листа
+        :param list_name: текстовое имя листа
         :param list_range: запрашивемый диапазон A1:H100
-        :return: Возвращает список списков [[], []..]. Каждый элеемнт списка список из 2 элементов. 1 - коммерческое
+        :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов. 1 - коммерческое
                 название, 2 - наименование ЕГАИС
         """
         if spreadsheets_id == '' or list_name == '' or list_range == '' and not (self.service is None):
             return []
 
-        try:
-            values = self.service.spreadsheets().values().get(
-                spreadsheetId=spreadsheets_id, range=list_name + '!' + list_range, majorDimension='ROWS'
-            ).execute()
-            # гуглшит отдает дапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу. но пустые строки могут
-            # могут оказаться посередине текста
-            # отсоритруем, чтобы пустые строки оказались в верху, а потом удалим их
-            values = sorted(values['values'])
-            i = 0
-            # убираем пустые списки
-            while i < len(values):
-                if len(values[i]) == 0:
-                    i += 1
-                else:
-                    break
-            return values[i:]
-        except Exception as error:
-            error.error_details
+        values = self.service.spreadsheets().values().get(
+            spreadsheetId=spreadsheets_id, range=list_name + '!' + list_range, majorDimension='ROWS'
+        ).execute()
+
+        if not values['values'].items:
             return []
 
-if __name__ == '__main__':
-    print(os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), # путь до /privatedata
-                'privatedata',
-                gs_vars.CREDENTIALS_FILE))
-    # os.path.join
+        # гуглшит отдает дапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу. но пустые строки могут
+        # могут оказаться посередине текста
+        # отсоритруем, чтобы пустые строки оказались в верху, а потом удалим их
+        values = sorted(values['values'])
+        i = 0
+        # убираем пустые списки
+        while i < len(values):
+            if not values[i]:
+                i += 1
+            else:
+                break
+        return values[i:]
+
