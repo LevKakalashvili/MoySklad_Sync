@@ -4,7 +4,7 @@
 # сервисный аккаунт google account@moyskald-sync.iam.gserviceaccount.com для работы по API
 
 # Файл, полученный в Google Developer Console
-CREDENTIALS_FILE = 'googledrive_credentials.json'
+CREDENTIALS_FILE = '../privatedata/googledrive_credentials.json'
 
 # ID Google Sheets документа (можно взять из его URL)
 SPREESHEET_ID_GOODS_AVAILABILITY = '1Sa4MSpj04288-UScp2t8_5vpZgSYmLrauf-OD3i-8O0'  # таблица "Наличие"
