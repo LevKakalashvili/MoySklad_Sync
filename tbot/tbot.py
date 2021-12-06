@@ -4,12 +4,11 @@ import project_settings
 import telebot
 import datetime
 import os, sys
-import logging
 import logging.config
 
 sys.path.insert(1, project_settings.PROJECT_PATH)
 
-import tbot.tbot_privatedata as tbot_privatedata
+import privatedata.tbot_privatedata as tbot_privatedata
 import moysklad.moysklad_class_lib as ms_class_lib
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
@@ -19,7 +18,7 @@ import utils.file_utils
 logging.config.dictConfig(logger_config.LOGGING_CONF)
 logger = logging.getLogger("tbot")
 
-bot = telebot.TeleBot(tbot_privatedata.TOKEN,  parse_mode = None)
+bot = telebot.TeleBot(tbot_privatedata.TOKEN, parse_mode = None)
 
 
 @bot.message_handler(commands=['egais'])
@@ -86,8 +85,10 @@ def start_message(message):
 
         if not unsuccess:
             # сохраняем списания для ЕГАИС в файл. ссылку на excel, отправляем в чат
-            send_file = utils.file_utils.save_to_excel(f'{os.path.abspath(os.curdir)}/Списание_ЕГАИС', compl_table_egais)
-
+            # send_file = utils.file_utils.save_to_excel(f'{os.path.abspath(os.curdir)}/Списание_ЕГАИС', compl_table_egais)
+            send_file = utils.file_utils.save_to_excel(
+                os.path.join(os.path.dirname(os.path.dirname(__file__)),'Списание_ЕГАИС'), # путь до /MoySklad
+                compl_table_egais)
 
             if send_file != '':
                 # отправляем файл
