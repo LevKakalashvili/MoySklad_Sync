@@ -1,9 +1,9 @@
 app.log
 project_settings.py
-/moysklad/moysklad_privatedata.py
+/privatedata/moysklad_privatedata.py
 /googledrive/googledrive_credentials.json
 /googledrive/googledrive_credentials.json
-/tbot/tbot_privatedata.py
+/privatedata/tbot_privatedata.py
 /pyvenv.cfg
 .idea/
 Lib/
@@ -15,5 +15,4 @@ tbot/__pycache__/
 utils/__pycache__/
 /shelf/
 /workspace.xml
-
-
+/privatedata/
