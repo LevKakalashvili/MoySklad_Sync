@@ -27,33 +27,32 @@ def start_message(message):
         bot.send_message(message.chat.id, "Готовлю данные...")
 
         ms = ms_class_lib.MoySklad()
-        success = ms.get_token()
+        ms.get_token()
 
         # получаем список товаров, проданых за прошедший день
-        str_date_start = str(datetime.datetime.now().date() - datetime.timedelta(days=1)) + ' 00:00:00'
-        str_date_end = str(datetime.datetime.now().date() - datetime.timedelta(days=1)) + ' 23:59:00'
-        sold_goods = ms.get_retail_demand_by_period(str_date_start, str_date_end)
+        sold_goods = ms.get_retail_demand_by_period(datetime.datetime.today(),
+                                                    datetime.datetime.today() - datetime.timedelta(days=1))
 
         if not sold_goods:
-            logger.error(f"Не получили список товаров из МС, проданых за период {str_date_start} - {str_date_end}:"
+            logger.error(f"Не получили список товаров из МС, проданых за период "
+                         f"{datetime.datetime.today().strptime('%Y-%m-%d 00:00:00')} - "
+                         f"{datetime.datetime(datetime.datetime.today() - datetime.timedelta(days=1)).strptime('%Y-%m-%d 23:59:00')}:"
                          f" len(sold_goods) = {len(sold_goods)}")
-            success = False
         else:
             logger.debug(f"Получили список товаров из МС, проданых за период {str_date_start} - {str_date_end}:"
                          f" len(sold_goods) = {len(sold_goods)}")
 
-        if success:
+        if not sold_goods:
             # корректироуем список, удаляем из списка проданных товаров, то что не нужно списывать в ЕГАИС
             sold_goods = ms.get_goods_for_egais(sold_goods)
 
             if not sold_goods:
                 logger.error(f"Не получили скорректированный список товаров: len(sold_goods) = {len(sold_goods)}")
-                success = False
 
             else:
                 logger.debug(f"Получили скорректированный список товаров: len(sold_goods) = {len(sold_goods)}")
 
-        if success:
+        if sold_goods:
             gs = gs_class_lib.GoogleSheets()
             # получаем таблицу соответствий
             compl_table_egais = gs.get_data(gs_vars.SPREEDSHEET_ID_EGAIS,
@@ -63,13 +62,12 @@ def start_message(message):
             if not compl_table_egais:
                 logger.error(f"Не получили таблицу соответствий из GoogleSheet: len(compl_table_egais) "
                              f"= {len(compl_table_egais)}")
-                success = False
             else:
 
                 logger.debug(
                     f"Получили таблицу соответствий из GoogleSheet: len(compl_table_egais) = {len(compl_table_egais)}")
 
-        if success:
+        if compl_table_egais:
             # соотносим проданные товары с наименованиями ЕГАИС
             compl_table_egais = ms.get_goods_compliance_egais(sold_goods, compl_table_egais)
 
@@ -80,7 +78,7 @@ def start_message(message):
             else:
                 logger.debug(f"Получили соотвествие названий ЕГАИС: len(compl_table_egais) = {len(compl_table_egais)}")
 
-        if success:
+        if succescompl_table_egais:
             # сохраняем списания для ЕГАИС в файл. ссылку на excel, отправляем в чат
             send_file = utils.file_utils.save_to_excel(
                 os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Списание_ЕГАИС'),  # путь до /MoySklad
@@ -95,9 +93,7 @@ def start_message(message):
             else:
                 bot.send_message(message.chat.id, "Не удалось подготовить файл")
                 logger.debug(f"Не удалось подготовить файл: нет имени файла")
-                success = False
-
-        if not success:
+        else:
             bot.send_message(message.chat.id, "Не удалось подготовить файл")
 
     except Exception as error:
@@ -110,4 +106,5 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    print(ms_class_lib.test())
+    # run()

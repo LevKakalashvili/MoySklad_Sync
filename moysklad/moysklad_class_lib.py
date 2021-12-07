@@ -6,6 +6,8 @@ import os
 import requests
 import logging
 import base64
+import datetime
+from urllib.parse import urljoin
 import logging.config
 import logger_config
 import privatedata.moysklad_privatedata as ms_pvdata
@@ -32,7 +34,7 @@ class MoySklad:
         }
         # отправляем запрос в МС для получения токена
         try:
-            response = requests.request("POST", ms_urls.JSON_URL + 'security/token', headers=headers)
+            response = requests.request("POST", urljoin(ms_urls.JSON_URL,'security/token'), headers=headers)
             response.raise_for_status()
         except requests.RequestException as error:
             self.logger.exception(f"Не удалось получить токен MoySklad: {error.args[0]}")
@@ -88,10 +90,10 @@ class MoySklad:
         except Exception as error:
             return []
 
-    def get_retail_demand_by_period(self, start_period: str, end_period: str) -> list:
+    def get_retail_demand_by_period(self, start_period: datetime.datetime, end_period: datetime.datetime) -> list:
         """ Получение списка розничных продаж за определенный период
-        :param start_period: начало запрашиваемого периода YYYY-MM-DD HH:MM:SS
-        :param end_period: конец запршиваемого периода YYYY-MM-DD HH:MM:SS
+        :param start_period (datetime): начало запрашиваемого периода start_period 00:00:00
+        :param end_period (datetime): конец запршиваемого периода end_period 23:59:00
         :return:
             В случе успешного заврешения возвращается список, элементов
                 Наименование товара (str)
@@ -100,19 +102,17 @@ class MoySklad:
             В случае ошибки возвращаеься пустой список
         :rtype: list
         """
-        if self.token == '' or start_period == '' or end_period == '':
+        if not self._token:
             return []
 
         # формат даты документа YYYY-MM-DD HH:MM:SS
-        date_filter_from = 'moment>' + start_period
-        date_filter_to = 'moment<' + end_period
-        # date_filter_from = 'moment>' + '2021-10-13 00:00:00'  # дата, с которой запрашиваем
-        # date_filter_to = 'moment<' + '2021-10-18 23:59:00'  # дата, до которой запрашиваем
+        date_filter_from = f'moment>{start_period.strftime("%Y-%m-%d 00:00:00")}'
+        date_filter_to = f'moment<{end_period.strftime("%Y-%m-%d 23:59:00")}'
 
         headers = {
             'Content-Type': 'application/json',
             'Lognex-Pretty-Print-JSON': 'true',
-            'Authorization': 'Bearer ' + self.token
+            'Authorization': 'Bearer ' + self._token
         }
         # т.к. в запрашиваеммом периоде может оказатся продаж болше, чем 100, а МойСклад отдает только страницамми
         # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос с смещением
@@ -125,47 +125,60 @@ class MoySklad:
         try:
             while need_request:
                 # задаем фильтр
-                request_filter = f'?filter=organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}' \
-                                 f'&filter={date_filter_from}&filter={date_filter_to}&offset={100 * offset}'
-                response = requests.request("GET", ms_urls.JSON_URL + 'entity/retaildemand' + request_filter +
-                                            '&expand=positions,positions.assortment&limit=100', headers=headers)
+                request_filter ={
+                    'filter': [
+                               f'organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}',
+                               date_filter_from,
+                               date_filter_to
+                               ],
+                    'offset': {100 * offset},
+                    'expand': 'positions,positions.assortment',
+                    'limit': '100'
+                                 }
+                response = requests.get(urljoin(ms_urls.JSON_URL,'entity/retaildemand'), request_filter, headers=headers)
 
-                response.raise_for_status()
 
-                # проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива в
-                # ответе len(response.json()['rows']) - размер массива в ответе, если это число меньше, чем response.json()[
-                # 'meta']['size'] то надо будет делать доплнительные запросы с смещением 100
-                # словарь для хранения списка прданных товаров. Ключ - наименование, значен - список [количество товара, цена]
+                # request_filter_1 = f'?filter=organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}' \
+                #                  f'&filter={date_filter_from}&filter={date_filter_to}&offset={100 * offset}'
+                # response1 = requests.request("GET", urljoin(ms_urls.JSON_URL,
+                #                                            'entity/retaildemand',
+                #                                            request_filter,
+                #                                            '&expand=positions,positions.assortment&limit=100'),
+                #                                            headers=headers)
 
-                # Смотрим вернулись ли нам данные в ответе
-                # если в ответе есть данные
-                if response.json()['meta']['size'] > 0:
-                    # проверяем нужно ли будет делать еще один запрос
-                    if len(response.json()['rows']) < 100:
-                        need_request = False
-                    # если нужно будет делать еще один запрос
-                    else:
-                        offset += 1
-                else:
-                    return []
-
-                # проходим по всем продажам и заполняем список с товарами
-                for sale in response.json()['rows']:
-                    for sale_position in sale['positions']['rows']:
-                        # проверяем наличие товара в словаре
-                        if sale_position['assortment']['name'] in retail_demand_goods:
-                            # увеличиваем счетчик проданного товара
-                            retail_demand_goods[sale_position['assortment']['name']][0] += sale_position['quantity']
-                        else:
-                            # добавляем товар в словарь проданных товаров
-                            retail_demand_goods[sale_position['assortment']['name']] = [sale_position['quantity'],
-                                                                                        sale_position['price'] / 100]
-            return [(key, values[0], values[1]) for key, values in retail_demand_goods.items()]
-
+            response.raise_for_status()
         except requests.RequestException as error:
-            return []  # возвращаем ошибку
-        except Exception as error:
-            return []  # возвращаем ошибку
+            return []  # возвращаем пустой список
+
+            # проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива в
+            # ответе len(response.json()['rows']) - размер массива в ответе, если это число меньше, чем response.json()[
+            # 'meta']['size'] то надо будет делать доплнительные запросы с смещением 100
+            # словарь для хранения списка проданных товаров. Ключ - наименование, значение - список [количество товара, цена]
+
+            # Смотрим вернулись ли нам данные в ответе
+            # если в ответе есть данные
+        if response.json()['meta']['size'] > 0:
+            # проверяем нужно ли будет делать еще один запрос
+            if len(response.json()['rows']) < 100:
+                need_request = False
+            # если нужно будет делать еще один запрос
+            else:
+                offset += 1
+        else:
+            return []
+
+        # проходим по всем продажам и заполняем список с товарами
+        for sale in response.json()['rows']:
+            for sale_position in sale['positions']['rows']:
+                # проверяем наличие товара в словаре
+                if sale_position['assortment']['name'] in retail_demand_goods:
+                    # увеличиваем счетчик проданного товара
+                    retail_demand_goods[sale_position['assortment']['name']][0] += sale_position['quantity']
+                else:
+                    # добавляем товар в словарь проданных товаров
+                    retail_demand_goods[sale_position['assortment']['name']] = [sale_position['quantity'], sale_position['price'] / 100]
+        return [(key, values[0], values[1]) for key, values in retail_demand_goods.items()]
+
 
     def get_goods_for_egais(self, goods: list) -> list:
         """ Метод удаляет из входного списка товаров, наменования перечисленные в файле moysklad_exclude_goods.txt
@@ -176,21 +189,18 @@ class MoySklad:
                     В случае ошибки возвращаеься пустой список
                 :rtype: list
          """
-        unsuccess = False
-
         # список слов исключений
         exclude_words = set()
 
-        if not goods:
-            self.logger.error(f"Входной список товаров пустой: len(goods) = {len(goods)}")
-            unsuccess = True
-        else:
+        if goods:
             self.logger.debug(f"Входной список товаров: len(goods) = {len(goods)}")
+        else:
+            self.logger.error(f"Входной список товаров пустой: len(goods) = {len(goods)}")
+            return []
 
-        if not unsuccess:
+        if goods:
             self.logger.debug(
                 f"Открывем файл исключений: {os.path.join(os.path.dirname(__file__),'moysklad_exclude_goods.txt')}")
-
             try:
                 # заполняем список слов исключений
                 with open(os.path.join(os.path.dirname(__file__), 'moysklad_exclude_goods.txt'), 'r',
@@ -199,19 +209,19 @@ class MoySklad:
                         if not (line[0] in ['#', '', ' ', '\n']):
                             exclude_words.add(line.replace('\n', '').lower())
             except FileNotFoundError:
-            # запись в лог, файл не найден
+                # запись в лог, файл не найден
                 self.logger.exception(f"Не удалось открыть файл исключений")
                 return []
 
-        if not unsuccess:
+        if goods:
             # убираем из списка товаров, товары которые попадают в список исключений
             i = 0
             while i < len(goods):
                 # if goods[i][0].lower().find('варниц') != -1:
                 #     a = -1
-                for j in range(len(exclude_words)):
+                for exclude_word in exclude_words:
                     # если список товаров передан списком кортежей [(Наименование, количество, цена), ... ]
-                    if goods[i][0].lower().find(exclude_words[j].lower()) != -1:
+                    if goods[i][0].lower().find(exclude_word.lower()) != -1:
                         goods.pop(i)
                         i -= 1
                 # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
@@ -219,3 +229,4 @@ class MoySklad:
                 i += 1
 
         return sorted(goods)
+
