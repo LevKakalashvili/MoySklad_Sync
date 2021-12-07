@@ -6,20 +6,27 @@ import httplib2  # pip install httplib2
 from oauth2client.service_account import ServiceAccountCredentials
 import googledrive.googlesheets_vars as gs_vars
 import os
+import logging.config
+import logger_config
 
 # pip install google-api-python-client библиотека для работы с googlу api
 # pip install oauth2client библиотека для авторизации
 
 
 class GoogleSheets:
-    """ Класс описывает работу с Google Sheets"""
-    service = None
+    """ Класс методы для чтения данных из Google Sheets"""
 
     def __init__(self) -> None:
+        logging.config.dictConfig(logger_config.LOGGING_CONF)
+        self.logger = logging.getLogger("google")
+
+        self.service = None # сервисный объект для работы с Google API
         self.get_access()
 
     def get_access(self) -> bool:
-        """Метод получения доступа к GoogleSheets по API"""
+        """Метод получения доступа сервисного объекта Google API
+        :return: Возвращает True если получилось подключиться к Google API, False в противном случае
+        """
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
             # все приватные данные храним в папке /MoySklad_Sync/privatedata
@@ -28,12 +35,12 @@ class GoogleSheets:
                          gs_vars.CREDENTIALS_FILE),
             [gs_vars.SPREEDSHEETS_URL, gs_vars.GDRIVE_URL])
         http_auth = credentials.authorize(httplib2.Http())
-        self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
-
-        # проверяме получилось ли получить экземпляр сервиса
-        if not (self.service is None):
+        try:
+            self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
+            self.logger.error(f"Получили доступ к Google API")
             return True
-        else:
+        except Exception as e:
+            self.logger.error(f"Не удалось создать сервисный объект для работы с Google API: {e.args[0]}")
             return False
 
     def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list:
@@ -42,9 +49,9 @@ class GoogleSheets:
         :param list_name: текстовое имя листа
         :param list_range: запрашивемый диапазон A1:H100
         :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов. 1 - коммерческое
-                название, 2 - наименование ЕГАИС
+                название, 2 - наименование ЕГАИС. Пустой список в случае не удачи
         """
-        if spreadsheets_id == '' or list_name == '' or list_range == '' and not (self.service is None):
+        if spreadsheets_id or list_name or list_range and (self.service is not None):
             return []
 
         values = self.service.spreadsheets().values().get(
@@ -55,7 +62,7 @@ class GoogleSheets:
             return []
 
         # гуглшит отдает дапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу. но пустые строки могут
-        # могут оказаться посередине текста
+        # могут оказаться в серелине текста
         # отсоритруем, чтобы пустые строки оказались в верху, а потом удалим их
         values = sorted(values['values'])
         i = 0
@@ -67,3 +74,5 @@ class GoogleSheets:
                 break
         return values[i:]
 
+if __name__ == '__main__':
+    gs = GoogleSheets()

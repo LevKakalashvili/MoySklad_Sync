@@ -1,4 +1,4 @@
-""" В модуле раняться данны для доступа к Google по API.
+""" В модуле хранятся данные для доступа к Google API.
 
 """
 # сервисный аккаунт google account@moyskald-sync.iam.gserviceaccount.com для работы по API

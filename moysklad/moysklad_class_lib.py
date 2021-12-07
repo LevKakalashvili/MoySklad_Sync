@@ -16,17 +16,22 @@ import moysklad.moysklad_urls as ms_urls
 
 
 class MoySklad:
-    """ Класс описывает работу с сервисом МойСклад"""
-    _token = ''  # токен для работы с сервисом
-    logger = None
+    """ Класс описывает работу с сервисом МойСклад по JSON API 1.2
+    https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api
+    """
 
     def __init__(self) -> None:
         logging.config.dictConfig(logger_config.LOGGING_CONF)
         self.logger = logging.getLogger("moysklad")
+        # токен для работы с сервисом
+        # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
+        self._token = ''
 
     def get_token(self) -> bool:
         """ Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True,
-        в случае ошибок False """
+        в случае ошибок False
+        # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
+        """
         # определяем заголовок
         self.logger.debug(f"Пытаемся получить токен у MoySklad")
         headers = {
@@ -34,7 +39,7 @@ class MoySklad:
         }
         # отправляем запрос в МС для получения токена
         try:
-            response = requests.request("POST", urljoin(ms_urls.JSON_URL,'security/token'), headers=headers)
+            response = requests.post(urljoin(ms_urls.JSON_URL,'security/token'), headers=headers)
             response.raise_for_status()
         except requests.RequestException as error:
             self.logger.exception(f"Не удалось получить токен MoySklad: {error.args[0]}")
@@ -136,18 +141,9 @@ class MoySklad:
                     'limit': '100'
                                  }
                 response = requests.get(urljoin(ms_urls.JSON_URL,'entity/retaildemand'), request_filter, headers=headers)
-
-
-                # request_filter_1 = f'?filter=organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}' \
-                #                  f'&filter={date_filter_from}&filter={date_filter_to}&offset={100 * offset}'
-                # response1 = requests.request("GET", urljoin(ms_urls.JSON_URL,
-                #                                            'entity/retaildemand',
-                #                                            request_filter,
-                #                                            '&expand=positions,positions.assortment&limit=100'),
-                #                                            headers=headers)
-
             response.raise_for_status()
         except requests.RequestException as error:
+            self.logger.exception(f"Не удалось получить продажи из сервиса MoySklad: {error.args[0]}")
             return []  # возвращаем пустой список
 
             # проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива в
@@ -230,3 +226,6 @@ class MoySklad:
 
         return sorted(goods)
 
+if __name__ == '__main__':
+    ms = MoySklad()
+    ms.get_token()
