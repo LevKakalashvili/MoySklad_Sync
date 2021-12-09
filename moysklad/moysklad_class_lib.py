@@ -76,38 +76,53 @@ class MoySklad:
             return []
         upd_sold_goods = []
 
-         # commercial_name,  *_ for sold_goods
+        # Алгоритм:
+        # 1. создаем список из comp_table[0]
+        # 2. проходим по sold_goods и ищем индексы элементов, где совпадает коммерческое наименование
+        #    (sold_good[0] == comp_table[0])
+        #    если нашли, создаем новый элемент типа Goods и добавляем его в новый список
+        #    если не нашли ловим exeption, то оставляем как есть и идем дальше
 
-
-        for sold_good in sold_goods:
-            # if str(sold_good[0]) == 'План Б - Parhelion' or str(sold_good[0]) == 'Aircraft - Шоколадный Стаут':
-            #     # Aircraft - Шоколадный Стаут
-            #     a = -1
-            start_ind = 0
-            end_ind = len(comp_table) - 1
-            mid_ind = len(comp_table) // 2
-            # бинарный поиск
-            while str(comp_table[mid_ind][0]).lower() != sold_good.commercial_name.lower() and start_ind < end_ind:
-                if sold_good.commercial_name > comp_table[mid_ind][0]:
-                    start_ind = mid_ind + 1
-                else:
-                    end_ind = mid_ind - 1
-                mid_ind = (start_ind + end_ind) // 2
-            else:
-                # если нашли совпадение
-                if sold_good.commercial_name.lower() == comp_table[mid_ind][0].lower():
-                    # заполняем результиуреющий список проаданных товаров в формате
-                    # (Комерческое_наименование, ЕГАИС наименование, Количество, Цена)
-                    upd_sold_goods.append(Good(sold_good.commercial_name,
-                                               comp_table[mid_ind][1],
-                                               sold_good.quantity,
-                                               sold_good.price))
-                # если совпадение не найдено
-                else:
-                    upd_sold_goods.append(Good(sold_good.commercial_name,
-                                               '',
-                                               sold_good.quantity,
-                                               sold_good.price))
+        temp_comp_table = [good[0] for good in comp_table]
+        for good in sold_goods:
+            try:
+                upd_good = Good(good.commercial_name,
+                                comp_table[temp_comp_table.index(good.commercial_name)][1],
+                                good.quantity,
+                                good.price)
+                upd_sold_goods.append(upd_good)
+            except ValueError:
+                upd_sold_goods.append(good)
+                continue
+        # for sold_good in sold_goods:
+        #     # if str(sold_good[0]) == 'План Б - Parhelion' or str(sold_good[0]) == 'Aircraft - Шоколадный Стаут':
+        #     #     # Aircraft - Шоколадный Стаут
+        #     #     a = -1
+        #     start_ind = 0
+        #     end_ind = len(comp_table) - 1
+        #     mid_ind = len(comp_table) // 2
+        #     # бинарный поиск
+        #     while str(comp_table[mid_ind][0]).lower() != sold_good.commercial_name.lower() and start_ind < end_ind:
+        #         if sold_good.commercial_name > comp_table[mid_ind][0]:
+        #             start_ind = mid_ind + 1
+        #         else:
+        #             end_ind = mid_ind - 1
+        #         mid_ind = (start_ind + end_ind) // 2
+        #     else:
+        #         # если нашли совпадение
+        #         if sold_good.commercial_name.lower() == comp_table[mid_ind][0].lower():
+        #             # заполняем результиуреющий список проаданных товаров в формате
+        #             # (Комерческое_наименование, ЕГАИС наименование, Количество, Цена)
+        #             upd_sold_goods.append(Good(sold_good.commercial_name,
+        #                                        comp_table[mid_ind][1],
+        #                                        sold_good.quantity,
+        #                                        sold_good.price))
+        #         # если совпадение не найдено
+        #         else:
+        #             upd_sold_goods.append(Good(sold_good.commercial_name,
+        #                                        '',
+        #                                        sold_good.quantity,
+        #                                        sold_good.price))
         return upd_sold_goods
 
 
