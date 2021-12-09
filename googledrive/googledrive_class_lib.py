@@ -37,7 +37,7 @@ class GoogleSheets:
         http_auth = credentials.authorize(httplib2.Http())
         try:
             self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
-            self.logger.error(f"Получили доступ к Google API")
+            self.logger.debug(f"Получили доступ к Google API")
             return True
         except Exception as e:
             self.logger.error(f"Не удалось создать сервисный объект для работы с Google API: {e.args[0]}")
@@ -51,27 +51,25 @@ class GoogleSheets:
         :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов. 1 - коммерческое
                 название, 2 - наименование ЕГАИС. Пустой список в случае не удачи
         """
-        if spreadsheets_id or list_name or list_range and (self.service is not None):
+        if not spreadsheets_id or not list_name or not list_range:
             return []
 
         values = self.service.spreadsheets().values().get(
-            spreadsheetId=spreadsheets_id, range=list_name + '!' + list_range, majorDimension='ROWS'
-        ).execute()
+            spreadsheetId=spreadsheets_id,
+            range=f'{list_name}!{list_range}',
+            majorDimension='ROWS'
+            ).execute()
 
-        if not values['values'].items:
+        if not values['values']:
             return []
 
         # гуглшит отдает дапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу. но пустые строки могут
-        # могут оказаться в серелине текста
+        # могут оказаться в середине текста
         # отсоритруем, чтобы пустые строки оказались в верху, а потом удалим их
         values = sorted(values['values'])
         i = 0
-        # убираем пустые списки
-        while i < len(values):
-            if not values[i]:
-                i += 1
-            else:
-                break
+        while not values[i]:
+            i += 1
         return values[i:]
 
 if __name__ == '__main__':
