@@ -74,55 +74,22 @@ class MoySklad:
         # [[Наименование, Наименование ЕГАИС], [Наименование, Наименование ЕГАИС], ...]
         if not sold_goods or not comp_table:
             return []
+
         upd_sold_goods = []
 
-        # Алгоритм:
-        # 1. создаем список из comp_table[0]
-        # 2. проходим по sold_goods и ищем индексы элементов, где совпадает коммерческое наименование
-        #    (sold_good[0] == comp_table[0])
-        #    если нашли, создаем новый элемент типа Goods и добавляем его в новый список
-        #    если не нашли ловим exeption, то оставляем как есть и идем дальше
-
-        temp_comp_table = [good[0] for good in comp_table]
+        # т.к. мы не можем гарантировать, что вложениые списки - списки из 2ух элементов,
+        # то необходимо проверять их длину
+        temp_comp_table = {good[0]: good[1] for good in comp_table if len(good) >1}
         for good in sold_goods:
-            try:
+            if good.commercial_name in temp_comp_table:
                 upd_good = Good(good.commercial_name,
-                                comp_table[temp_comp_table.index(good.commercial_name)][1],
+                                temp_comp_table[good.commercial_name],
                                 good.quantity,
                                 good.price)
-                upd_sold_goods.append(upd_good)
-            except ValueError:
-                upd_sold_goods.append(good)
-                continue
-        # for sold_good in sold_goods:
-        #     # if str(sold_good[0]) == 'План Б - Parhelion' or str(sold_good[0]) == 'Aircraft - Шоколадный Стаут':
-        #     #     # Aircraft - Шоколадный Стаут
-        #     #     a = -1
-        #     start_ind = 0
-        #     end_ind = len(comp_table) - 1
-        #     mid_ind = len(comp_table) // 2
-        #     # бинарный поиск
-        #     while str(comp_table[mid_ind][0]).lower() != sold_good.commercial_name.lower() and start_ind < end_ind:
-        #         if sold_good.commercial_name > comp_table[mid_ind][0]:
-        #             start_ind = mid_ind + 1
-        #         else:
-        #             end_ind = mid_ind - 1
-        #         mid_ind = (start_ind + end_ind) // 2
-        #     else:
-        #         # если нашли совпадение
-        #         if sold_good.commercial_name.lower() == comp_table[mid_ind][0].lower():
-        #             # заполняем результиуреющий список проаданных товаров в формате
-        #             # (Комерческое_наименование, ЕГАИС наименование, Количество, Цена)
-        #             upd_sold_goods.append(Good(sold_good.commercial_name,
-        #                                        comp_table[mid_ind][1],
-        #                                        sold_good.quantity,
-        #                                        sold_good.price))
-        #         # если совпадение не найдено
-        #         else:
-        #             upd_sold_goods.append(Good(sold_good.commercial_name,
-        #                                        '',
-        #                                        sold_good.quantity,
-        #                                        sold_good.price))
+            else:
+                upd_good = good
+            upd_sold_goods.append(upd_good)
+
         return upd_sold_goods
 
 
