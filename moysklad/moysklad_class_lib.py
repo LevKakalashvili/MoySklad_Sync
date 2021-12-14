@@ -222,7 +222,7 @@ class MoySklad:
                         goods.pop(i)
                         i -= 1
                 # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
-                goods[i] = Good(goods[i].commercial_name.split(' (')[0].strip(),
+                goods[i] = Good(goods[i].commercial_name.split(' (')[0].replace('  ', ' ').strip(),
                                  goods[i].egais_name,
                                  goods[i].quantity,
                                  goods[i].price)
