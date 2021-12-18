@@ -151,7 +151,7 @@ class MoySklad:
                     # получаем таблицу соответствий
                     compl_table_egais = gs.get_data(gs_vars.SPREEDSHEET_ID_EGAIS,
                                                     gs_vars.LIST_NAME_EGAIS,
-                                                    gs_vars.FIRST_CELL_EGAIS + ':' + gs_vars.LAST_COLUMN_EGAIS + '2000')
+                                                    f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000')
 
                     if compl_table_egais:
 
