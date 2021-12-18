@@ -35,31 +35,38 @@ class MoySklad:
         # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
         self._token = ''
 
-    def get_token(self) -> bool:
+    def get_token(self, request_new=False) -> bool:
         """ Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True,
         в случае ошибок False
         # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
+        request_new = True, каждый раз будет запрашиваться новый, если False будет браться из moysklad_privatedata.py
         """
-        # определяем заголовок
-        self.logger.debug(f"Пытаемся получить токен у MoySklad")
-        headers = {
-            'Authorization': 'Basic' + str(base64.b64encode((ms_pvdata.USER + ':' + ms_pvdata.PASSWORD).encode()))
-        }
-        # отправляем запрос в МС для получения токена
-        try:
-            response = requests.post(urljoin(ms_urls.JSON_URL,'security/token'), headers=headers)
-            response.raise_for_status()
-        except requests.RequestException as error:
-            self.logger.exception(f"Не удалось получить токен MoySklad: {error.args[0]}")
-            return False
+        self.logger.debug(f"request_new = {request_new}")
+        # если необходимо запросить новый токен у сервиса
+        if request_new:
+            # определяем заголовок
+            self.logger.debug(f"Пытаемся получить токен у MoySklad")
+            headers = {
+                'Authorization': 'Basic' + str(base64.b64encode((ms_pvdata.USER + ':' + ms_pvdata.PASSWORD).encode()))
+            }
+            # отправляем запрос в МС для получения токена
+            try:
+                response = requests.post(urljoin(ms_urls.JSON_URL,'security/token'), headers=headers)
+                response.raise_for_status()
+            except requests.RequestException as error:
+                self.logger.exception(f"Не удалось получить токен MoySklad: {error.args[0]}")
+                return False
 
-        if response.json()['access_token'] != '':
-            self._token = response.json()['access_token']  # возвращаем токен
-            self.logger.debug(f"Получили токен у MoySklad")
-            return True
+            if response.json()['access_token'] != '':
+                self._token = response.json()['access_token']  # возвращаем токен
+                self.logger.debug(f"Получили токен у MoySklad")
+                return True
+            else:
+                self.logger.error(f"Не удалось получить токен MoySklad")
+                return False
         else:
-            self.logger.error(f"Не удалось получить токен MoySklad")
-            return False
+            self._token = ms_pvdata.TOKEN
+            return True
 
     def get_goods_compliance_egais(self, sold_goods: list, comp_table: list) -> list:
         """
