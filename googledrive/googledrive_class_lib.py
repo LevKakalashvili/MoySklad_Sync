@@ -9,7 +9,7 @@ import os
 import logging.config
 import logger_config
 
-# pip install google-api-python-client библиотека для работы с googlу api
+# pip install google-api-python-client библиотека для работы с google api
 # pip install oauth2client библиотека для авторизации
 
 
@@ -20,7 +20,7 @@ class GoogleSheets:
         logging.config.dictConfig(logger_config.LOGGING_CONF)
         self.logger = logging.getLogger("google")
 
-        self.service = None # сервисный объект для работы с Google API
+        self.service = None  # сервисный объект для работы с Google API
         self.get_access()
 
     def get_access(self) -> bool:
@@ -47,7 +47,7 @@ class GoogleSheets:
         """
         :param spreadsheets_id: id таблицы в Google Sheets
         :param list_name: текстовое имя листа
-        :param list_range: запрашивемый диапазон A1:H100
+        :param list_range: запрашиваемый диапазон A1:H100
         :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов. 1 - коммерческое
                 название, 2 - наименование ЕГАИС. Пустой список в случае не удачи
         """
@@ -63,14 +63,15 @@ class GoogleSheets:
         if not values['values']:
             return []
 
-        # гуглшит отдает диапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу, но пустые строки
+        # googlesheets отдает диапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу, но пустые строки
         # могут оказаться в середине текста
-        # отсоритруем, чтобы пустые строки оказались в верху, а потом удалим их
+        # отсортируем, чтобы пустые строки оказались вверху, а потом удалим их
         values = sorted(values['values'])
         i = 0
         while not values[i]:
             i += 1
         return values[i:]
+
 
 if __name__ == '__main__':
     gs = GoogleSheets()
