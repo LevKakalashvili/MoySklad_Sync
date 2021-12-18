@@ -40,11 +40,11 @@ class MoySklad:
         self.sold_goods = []  # список проданных товаров за период
         self.sold_goods_egais = []  # список проданных товаров для списания в ЕГАИС
 
-    def get_token(self, request_new=False) -> bool:
+    def get_token(self, request_new=True) -> bool:
         """ Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True,
         в случае ошибок False
         # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
-        request_new = True, каждый раз будет запрашиваться новый, если False будет браться из moysklad_privatedata.py
+        request_new = True, каждый раз будет запрашиваться новый токен, если False будет браться из moysklad_privatedata.py
         """
         self.logger.debug(f"Получаем токен для работы с сервисом МойСклад. request_new = {request_new}")
         # если необходимо запросить новый токен у сервиса
