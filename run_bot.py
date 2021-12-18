@@ -1,5 +1,4 @@
 import tbot.tbot
-import os
 
 def run_bot():
     tbot.tbot.run()
