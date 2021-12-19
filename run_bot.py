@@ -1,6 +1,7 @@
 import tbot.tbot
 
-def run_bot():
+
+def run_bot() -> None:
     tbot.tbot.run()
 
 

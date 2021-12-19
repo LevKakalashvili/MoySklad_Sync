@@ -43,7 +43,7 @@ class GoogleSheets:
             self.logger.error(f"Не удалось создать сервисный объект для работы с Google API: {e.args[0]}")
             return False
 
-    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list:
+    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list[[str, str]]:
         """
         :param spreadsheets_id: id таблицы в Google Sheets
         :param list_name: текстовое имя листа

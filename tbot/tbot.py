@@ -18,7 +18,7 @@ bot = telebot.TeleBot(tbot_privatedata.TOKEN, parse_mode=None)
 
 
 @bot.message_handler(commands=['egais'])
-def start_message(message):
+def start_message(message) -> None:
 
     logger.debug("Приняли команду: " + message.json['text'])
     bot.send_message(message.chat.id, "Готовлю данные...")
@@ -49,7 +49,7 @@ def start_message(message):
         logger.error(f"Не удалось подготовить файл")
 
 
-def run():
+def run() -> None:
     bot.polling(none_stop=True)
 
 

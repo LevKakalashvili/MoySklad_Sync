@@ -2,13 +2,15 @@ import os
 import pandas as pd
 import datetime
 
+import moysklad.moysklad_class_lib as ms
 
-def remove_file(file_name: str):
+
+def remove_file(file_name: str) -> None:
     if file_name != '' and os.path.isfile(file_name):
         os.remove(file_name)
 
 
-def save_to_excel(file_name: str, data: list, add_date=True) -> str:
+def save_to_excel(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
     """
     Функция сохранения в файл excel
     :param file_name:
@@ -36,7 +38,7 @@ def save_to_excel(file_name: str, data: list, add_date=True) -> str:
     return file_name
 
 
-def save_to_txt(file_name: str, data: list, add_date=True) -> str:
+def save_to_txt(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
     """ Сохранение в текстовый файл"""
     if not data:
         return ""
@@ -50,6 +52,4 @@ def save_to_txt(file_name: str, data: list, add_date=True) -> str:
                 line_ = ''.join(str(line))
                 f.write(line_ + '\n')
 
-        # удаляем "вчерашний" файл
-        # if file_name != '' and os.path.isfile(file_name):
-        #     os.remove(file_name)
+    return file_name
