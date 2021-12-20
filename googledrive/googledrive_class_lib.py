@@ -1,6 +1,8 @@
 """
 Модуль для работы с Google Sheets
 """
+from typing import Any
+
 import googleapiclient.discovery  # pip install google-api-python-client
 import httplib2  # pip install httplib2
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,10 +12,6 @@ import logging.config
 import logger_config
 
 
-# pip install google-api-python-client библиотека для работы с google api
-# pip install oauth2client библиотека для авторизации
-
-
 class GoogleSheets:
     """ Класс методы для чтения данных из Google Sheets"""
 
@@ -21,7 +19,7 @@ class GoogleSheets:
         logging.config.dictConfig(logger_config.LOGGING_CONF)
         self.logger = logging.getLogger("google")
 
-        self.service = None  # сервисный объект для работы с Google API
+        self.service: Any = None  # сервисный объект для работы с Google API
         self.get_access()
 
     def get_access(self) -> bool:
@@ -55,11 +53,9 @@ class GoogleSheets:
         if not spreadsheets_id or not list_name or not list_range:
             return []
 
-
         values = self.service.spreadsheets().values().get(spreadsheetId=spreadsheets_id,
                                                           range=f'{list_name}!{list_range}',
                                                           majorDimension='ROWS').execute()
-
         if not values['values']:
             return []
 

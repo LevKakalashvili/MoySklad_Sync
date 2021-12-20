@@ -1,7 +1,7 @@
 """ В модуле хранятся описание классов.
 
 """
-from typing import NamedTuple
+from typing import NamedTuple, Any
 import os
 
 import requests
@@ -199,14 +199,11 @@ class MoySklad:
         need_request: bool = True
         offset: int = 0
         # словарь в котором будем хранить список всех проданных товаров, за выбранный промежуток времени
-        # retail_demand_goods: dict[str, Good] = {}
-        retail_demand_goods: dict[str, Good] = dict()
-        # response: requests.models.Response = None
-        response = None
+        retail_demand_goods: dict[str, list[float]] = dict()
 
         while need_request:
             # задаем фильтр
-            request_filter = {
+            request_filter: dict[str, Any] = {
                 'filter': [
                     f'organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}',
                     date_filter_from,
@@ -218,8 +215,9 @@ class MoySklad:
             }
 
             try:
-                response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'), request_filter,
-                                        headers=headers)
+                response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'),
+                                                                  request_filter,
+                                                                  headers=headers)
                 response.raise_for_status()
             except requests.RequestException as error:
                 self.logger.exception(f"Не удалось получить продажи из сервиса MoySklad: {error.args[0]}")
@@ -257,7 +255,7 @@ class MoySklad:
         self.sold_goods = sorted([Good(key, '', values[0], values[1]) for key, values in retail_demand_goods.items()])
         return self.sold_goods
 
-    def _get_goods_for_egais(self, goods: list) -> list:
+    def _get_goods_for_egais(self, goods: list[Good]) -> list[Good]:
         """ Метод удаляет из входного списка товаров, наименования перечисленные в файле moysklad_exclude_goods.txt
                 :param goods: Список товаров. Если передаваемый список - многомерный массив, то наименованием считается
                 0ой элемент, вложенного элемента list[i][0]

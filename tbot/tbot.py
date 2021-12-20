@@ -1,24 +1,23 @@
 # пример кода взят https://habr.com/ru/post/580408/
+
 import logger_config
 import telebot
 import datetime
 import os
 import logging.config
-import privatedata.tbot_privatedata as tbot_privatedata
+from privatedata.tbot_privatedata import TOKEN
 import moysklad.moysklad_class_lib as ms_class_lib
 import utils.file_utils
-
-# sys.path.insert(1, project_settings.PROJECT_PATH)
 
 logging.config.dictConfig(logger_config.LOGGING_CONF)
 logger = logging.getLogger("tbot")
 
 # создаем бота
-bot = telebot.TeleBot(tbot_privatedata.TOKEN, parse_mode=None)
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 
 @bot.message_handler(commands=['egais'])
-def start_message(message) -> None:
+def start_message(message: telebot.types.Message) -> None:
 
     logger.debug("Приняли команду: " + message.json['text'])
     bot.send_message(message.chat.id, "Готовлю данные...")
