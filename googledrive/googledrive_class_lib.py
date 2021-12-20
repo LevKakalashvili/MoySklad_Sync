@@ -9,6 +9,7 @@ import os
 import logging.config
 import logger_config
 
+
 # pip install google-api-python-client библиотека для работы с google api
 # pip install oauth2client библиотека для авторизации
 
@@ -43,7 +44,7 @@ class GoogleSheets:
             self.logger.error(f"Не удалось создать сервисный объект для работы с Google API: {e.args[0]}")
             return False
 
-    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list[[str, str]]:
+    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list[list[str]]:
         """
         :param spreadsheets_id: id таблицы в Google Sheets
         :param list_name: текстовое имя листа
@@ -54,11 +55,10 @@ class GoogleSheets:
         if not spreadsheets_id or not list_name or not list_range:
             return []
 
-        values = self.service.spreadsheets().values().get(
-            spreadsheetId=spreadsheets_id,
-            range=f'{list_name}!{list_range}',
-            majorDimension='ROWS'
-            ).execute()
+
+        values = self.service.spreadsheets().values().get(spreadsheetId=spreadsheets_id,
+                                                          range=f'{list_name}!{list_range}',
+                                                          majorDimension='ROWS').execute()
 
         if not values['values']:
             return []

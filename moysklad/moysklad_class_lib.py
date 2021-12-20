@@ -75,7 +75,7 @@ class MoySklad:
             self._token = ms_pvdata.TOKEN
             return True
 
-    def _get_goods_compliance_egais(self, sold_goods: list[Good], comp_table: list[[str, str]]) -> list[Good]:
+    def _get_goods_compliance_egais(self, sold_goods: list[Good], comp_table: list[list[str]]) -> list[Good]:
         """
         Метод сравнивает два списка sold_goods и comp_table, возвращает новый sold_goods, c заполненными наименованиями
         ЕГАИС
@@ -110,7 +110,8 @@ class MoySklad:
             self.sold_goods_egais = sorted(upd_sold_goods)
         return self.sold_goods_egais
 
-    def get_retail_demand_by_period_egais(self, start_period: datetime.datetime, end_period=None) -> list[Good]:
+    def get_retail_demand_by_period_egais(self, start_period: datetime.datetime,
+                                                end_period: datetime.datetime = None) -> list[Good]:
         """ Получение отсортированный список розничных продаж за определенный период, для списания в ЕГАИС
                 :param start_period: начало запрашиваемого периода start_period 00:00:00
                 :param end_period: конец запрашиваемого периода end_period 23:59:00. Если не указа,
@@ -199,7 +200,7 @@ class MoySklad:
         offset: int = 0
         # словарь в котором будем хранить список всех проданных товаров, за выбранный промежуток времени
         # retail_demand_goods: dict[str, Good] = {}
-        retail_demand_goods = {}
+        retail_demand_goods: dict[str, Good] = dict()
         # response: requests.models.Response = None
         response = None
 
