@@ -1,6 +1,7 @@
-import os
-import pandas as pd
 import datetime
+import os
+
+import pandas as pd
 
 import moysklad.moysklad_class_lib as ms
 
@@ -12,10 +13,10 @@ def remove_file(file_name: str) -> None:
 
 def save_to_excel(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
     """
-    Функция сохранения в файл excel
+     Функция сохранения в файл excel
     :param file_name:
-    :param data:
-    :param add_date:
+    :param data: Таблица для сохранения
+    :param add_date: По умолчанию True - к имени файла будет добавлена текущая дата (ИМЯ_ФАЙЛА_ГОД_МЕСЯЦ_ДЕНЬ)
     :return: Имя файла
     """
 
@@ -39,15 +40,15 @@ def save_to_excel(file_name: str, data: list[ms.Good], add_date: bool = True) ->
 
 
 def save_to_txt(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
-    """ Сохранение в текстовый файл"""
+
     if not data:
-        return ""
+        return ''
 
     if add_date:
         file_name = f'{file_name}_{str(datetime.datetime.now().date() - datetime.timedelta(days=1))}.txt'
 
         # пишем данные в файл
-        with open(file_name, 'w', encoding="utf-8") as f:
+        with open(file_name, 'w', encoding='utf-8') as f:
             for line in data:
                 line_ = ''.join(str(line))
                 f.write(line_ + '\n')

@@ -1,20 +1,22 @@
-""" В модуле хранятся описание классов.
-
 """
+В модуле хранятся описание классов.
+"""
+import base64
+import datetime
+import logging
 from typing import NamedTuple, Any
 import os
 
-import requests
-import logging
-import base64
-import datetime
-from urllib.parse import urljoin
 import logging.config
-import logger_config
-import privatedata.moysklad_privatedata as ms_pvdata
-import moysklad.moysklad_urls as ms_urls
+
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
+import requests
+
+import logger_config
+import moysklad.moysklad_urls as ms_urls
+import privatedata.moysklad_privatedata as ms_pvdata
+from urllib.parse import urljoin
 
 
 class Good(NamedTuple):
@@ -32,7 +34,7 @@ class MoySklad:
 
     def __init__(self) -> None:
         logging.config.dictConfig(logger_config.LOGGING_CONF)
-        self.logger = logging.getLogger("moysklad")
+        self.logger = logging.getLogger('moysklad')
         # токен для работы с сервисом
         # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
         self._token: str = ''
@@ -47,31 +49,30 @@ class MoySklad:
         request_new = True, каждый раз будет запрашиваться новый токен, если False будет браться из
         moysklad_privatedata.py
         """
-        self.logger.debug(f"Получаем токен для работы с сервисом МойСклад. request_new = {request_new}")
+        self.logger.debug(f'Получаем токен для работы с сервисом МойСклад. request_new = {request_new}')
         # если необходимо запросить новый токен у сервиса
         if request_new:
             # определяем заголовок
-            self.logger.debug(f"Пытаемся получить токен у MoySklad")
+            self.logger.debug('Пытаемся получить токен у MoySklad')
             headers = {
-                'Authorization': 'Basic' + str(base64.b64encode((ms_pvdata.USER + ':' + ms_pvdata.PASSWORD).encode()))
-            }
+                'Authorization': 'Basic' + str(base64.b64encode((ms_pvdata.USER + ':' + ms_pvdata.PASSWORD).encode()))}
             # отправляем запрос в МС для получения токена
             try:
                 response = requests.post(urljoin(ms_urls.JSON_URL, 'security/token'), headers=headers)
                 response.raise_for_status()
             except requests.RequestException as error:
-                self.logger.exception(f"Не удалось получить токен MoySklad: {error.args[0]}")
+                self.logger.exception(f'Не удалось получить токен MoySklad: {error.args[0]}')
                 return False
 
             if response.json()['access_token'] != '':
                 self._token = response.json()['access_token']  # возвращаем токен
-                self.logger.debug(f"Получили токен у MoySklad")
+                self.logger.debug('Получили токен у MoySklad')
                 return True
             else:
-                self.logger.error(f"Не удалось получить токен MoySklad")
+                self.logger.error('Не удалось получить токен MoySklad')
                 return False
         else:
-            self.logger.debug(f"Получаем токен для работы с сервисом МойСклад из файла. request_new = {request_new}")
+            self.logger.debug(f'Получаем токен для работы с сервисом МойСклад из файла. request_new = {request_new}')
             self._token = ms_pvdata.TOKEN
             return True
 
@@ -127,26 +128,26 @@ class MoySklad:
         if end_period is None:
             end_period = start_period
 
-        self.logger.debug(f"Получаем список товаров из МС, проданных за период "
-                          f"{(start_period.strftime('%Y-%m-%d 00:00:00'))} - "
-                          f"{(end_period.strftime('%Y-%m-%d 23:59:00'))}")
+        self.logger.debug(f'Получаем список товаров из МС, проданных за период '
+                          f'{start_period.strftime("%Y-%m-%d 00:00:00")} - '
+                          f'{end_period.strftime("%Y-%m-%d 23:59:00")}')
 
         # Получаем список товаров из МС, проданных за период
         self.get_retail_demand_by_period(start_period)
 
-        self.logger.debug(f"len(_sold_goods) = {len(self.sold_goods)}")
+        self.logger.debug(f'len(_sold_goods) = {len(self.sold_goods)}')
 
         if self.sold_goods:
-            self.logger.debug(f"Получаем скорректированный список товаров, для списания в ЕГАИС")
+            self.logger.debug('Получаем скорректированный список товаров, для списания в ЕГАИС')
 
             # Получаем скорректированный список товаров, для списания в ЕГАИС
             self._get_goods_for_egais(self.sold_goods)
 
-            self.logger.debug(f"len(_sold_goods_egais) = {len(self.sold_goods_egais)}")
+            self.logger.debug(f'len(_sold_goods_egais) = {len(self.sold_goods_egais)}')
 
             if self.sold_goods_egais:
 
-                self.logger.debug(f"Получаем доступ к Google API")
+                self.logger.debug('Получаем доступ к Google API')
                 gs = gs_class_lib.GoogleSheets()
 
                 if gs.service is not None:
@@ -157,8 +158,8 @@ class MoySklad:
 
                     if compl_table_egais:
 
-                        self.logger.debug(f"Получили соответствие названий ЕГАИС: len(compl_table_egais) = "
-                                          f"{len(compl_table_egais)}")
+                        self.logger.debug(f'Получили соответствие названий ЕГАИС: len(compl_table_egais) = '
+                                          f'{len(compl_table_egais)}')
                         # соотносим проданные товары с наименованиями ЕГАИС
                         self._get_goods_compliance_egais(self.sold_goods, compl_table_egais)
 
@@ -191,8 +192,7 @@ class MoySklad:
         headers = {
             'Content-Type': 'application/json',
             'Lognex-Pretty-Print-JSON': 'true',
-            'Authorization': 'Bearer ' + self._token
-        }
+            'Authorization': 'Bearer ' + self._token}
         # Т.к. в запрашиваемом периоде может оказаться продаж больше, чем 100, а МойСклад отдает только страницами
         # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос со смещением
         # offset=200, следующий offset-300 и т.д.
@@ -207,20 +207,16 @@ class MoySklad:
                 'filter': [
                     f'organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}',
                     date_filter_from,
-                    date_filter_to
-                ],
+                    date_filter_to],
                 'offset': {100 * offset},
                 'expand': 'positions,positions.assortment',
-                'limit': '100'
-            }
+                'limit': '100'}
 
             try:
-                response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'),
-                                                                  request_filter,
-                                                                  headers=headers)
+                response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'), request_filter, headers=headers)
                 response.raise_for_status()
             except requests.RequestException as error:
-                self.logger.exception(f"Не удалось получить продажи из сервиса MoySklad: {error.args[0]}")
+                self.logger.exception(f'Не удалось получить продажи из сервиса MoySklad: {error.args[0]}')
                 return []  # возвращаем пустой список
 
             # Проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива
@@ -260,7 +256,7 @@ class MoySklad:
                 :param goods: Список товаров. Если передаваемый список - многомерный массив, то наименованием считается
                 0ой элемент, вложенного элемента list[i][0]
                 :return:
-                    В случе успешного завершения возвращается список, элементов
+                    В случе успешного завершения возвращается список, элементов Goods
                     В случае ошибки возвращается пустой список.
                 :rtype: list
          """
@@ -268,16 +264,16 @@ class MoySklad:
         exclude_words = set()
 
         if goods:
-            self.logger.debug(f"Входной список товаров: len(goods) = {len(goods)}")
+            self.logger.debug(f'Входной список товаров: len(goods) = {len(goods)}')
         else:
-            self.logger.error(f"Входной список товаров пустой: len(goods) = {len(goods)}")
+            self.logger.error(f'Входной список товаров пустой: len(goods) = {len(goods)}')
             return []
 
         if goods:
 
             exclude_file_name = os.path.join(os.path.dirname(__file__), 'moysklad_exclude_goods.txt')
             self.logger.debug(
-                f"Открываем файл исключений: {exclude_file_name}")
+                f'Открываем файл исключений: {exclude_file_name}')
             try:
                 # заполняем список слов исключений
                 with open(exclude_file_name, 'r', encoding='utf-8') as file:
@@ -286,15 +282,13 @@ class MoySklad:
                             exclude_words.add(line.replace('\n', '').lower())
             except FileNotFoundError:
                 # запись в лог, файл не найден
-                self.logger.exception(f"Не удалось открыть файл исключений")
+                self.logger.exception('Не удалось открыть файл исключений')
                 return []
 
         if goods:
             # убираем из списка товаров, товары которые попадают в список исключений
             i = 0
             while i < len(goods):
-                # if goods[i][0].lower().find('варниц') != -1:
-                #     a = -1
                 for exclude_word in exclude_words:
                     # Если список товаров передан списком кортежей [(Наименование, количество, цена), ... ]
                     if goods[i].commercial_name.lower().find(exclude_word.lower()) != -1:
@@ -305,8 +299,6 @@ class MoySklad:
                                 goods[i].egais_name,
                                 goods[i].quantity,
                                 goods[i].price)
-
-                # goods[i] = (goods[i][0].split(' (')[0], goods[i][1], goods[i][2])
                 i += 1
 
         self.sold_goods_egais = sorted(goods)
