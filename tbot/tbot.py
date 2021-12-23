@@ -24,7 +24,7 @@ def start_message(message: telebot.types.Message) -> None:
     bot.send_message(message.chat.id, 'Готовлю данные...')
 
     ms = ms_class_lib.MoySklad()
-    ms.get_token()
+    ms.get_token(request_new=False)
 
     # получаем список товаров ЕГАИС, проданных за прошедший день
     ms.get_retail_demand_by_period_egais(datetime.datetime.today() - datetime.timedelta(days=1))

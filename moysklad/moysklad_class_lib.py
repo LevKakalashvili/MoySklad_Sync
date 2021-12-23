@@ -4,20 +4,18 @@
 import base64
 import datetime
 import logging
+import logging.config
 from typing import NamedTuple, Any
 import os
+from urllib.parse import urljoin
 
-import logging.config
+import requests
 
 import googledrive.googledrive_class_lib as gs_class_lib
 import googledrive.googlesheets_vars as gs_vars
-import requests
-
 import logger_config
 import moysklad.moysklad_urls as ms_urls
 import privatedata.moysklad_privatedata as ms_pvdata
-from urllib.parse import urljoin
-
 import utils.file_utils
 
 
@@ -56,40 +54,35 @@ class MoySklad:
         if request_new:
             # определяем заголовок
             self.logger.debug('Пытаемся получить токен у MoySklad')
-            headers = {
-                'Authorization': 'Basic' + str(base64.b64encode((ms_pvdata.USER + ':' + ms_pvdata.PASSWORD).encode()))}
+            pvd = f'{ms_pvdata.USER}:{ms_pvdata.PASSWORD}'.encode()
+            headers = {'Authorization': f'Basic{base64.b64encode(pvd)}'}
             # отправляем запрос в МС для получения токена
             try:
                 response = requests.post(urljoin(ms_urls.JSON_URL, 'security/token'), headers=headers)
                 response.raise_for_status()
             except requests.RequestException as error:
                 self.logger.exception(f'Не удалось получить токен MoySklad: {error.args[0]}')
+                return False
 
-            if response.json()['access_token'] != '':
-                self._token = response.json()['access_token']  # возвращаем токен
-                self.logger.debug('Получили токен у MoySklad')
-                return True
-            else:
-                self.logger.error('Не удалось получить токен MoySklad')
+            self._token = response.json()['access_token']  # возвращаем токен
         else:
-            self.logger.debug(f'Получаем токен для работы с сервисом МойСклад из файла. request_new = {request_new}')
             self._token = ms_pvdata.TOKEN
-            return True
-        return False
+
+        return True
 
     def get_retail_demand_by_period_egais(self, start_period: datetime.datetime,
                                           end_period: datetime.datetime = None) -> list[Good]:
         """ Получение отсортированный список розничных продаж за определенный период, для списания в ЕГАИС
-                :param start_period: начало запрашиваемого периода start_period 00:00:00
-                :param end_period: конец запрашиваемого периода end_period 23:59:00. Если не указа,
-                то считается, как start_period 23:59:00
-                :return:
-                    В случе успешного завершения возвращается список, элементов. Элемент - экземпляр класса Good
-                        Наименование товара (str)
-                        Количество проданного товара за заданный промежуток времени (float)
-                        Стоимость единицы товара (float)
-                    В случае ошибки возвращается пустой список.
-                :rtype: list[Good]
+            :param start_period: начало запрашиваемого периода start_period 00:00:00
+            :param end_period: конец запрашиваемого периода end_period 23:59:00. Если не указа,
+            то считается, как start_period 23:59:00
+            :return:
+                В случе успешного завершения возвращается список, элементов. Элемент - экземпляр класса Good
+                    Наименование товара (str)
+                    Количество проданного товара за заданный промежуток времени (float)
+                    Стоимость единицы товара (float)
+                В случае ошибки возвращается пустой список.
+            :rtype: list[Good]
                 """
         if end_period is None:
             end_period = start_period
@@ -129,41 +122,6 @@ class MoySklad:
                         # соотносим проданные товары с наименованиями ЕГАИС
                         self._get_goods_compliance_egais(self.sold_goods, compl_table_egais)
 
-        return self.sold_goods_egais
-
-    def _get_goods_compliance_egais(self, sold_goods: list[Good], comp_table: list[list[str]]) -> list[Good]:
-        """
-        Метод сравнивает два списка sold_goods и comp_table, возвращает новый sold_goods, c заполненными наименованиями
-        ЕГАИС
-        :param sold_goods: список товаров, каждый элемент - инстанс класса Good
-        :param comp_table:
-        :return: список товаров, c заполненным Good.egais_name, каждый элемент инстанс класса Good
-        """
-
-        # sold_goods - отсортированный список кортежей
-        # [(Наименование, Количество, Цена), (Наименование, Количество, Цена), ...]
-        # comp_table - отсортированный список списков
-        # [[Наименование, Наименование ЕГАИС], [Наименование, Наименование ЕГАИС], ...]
-        if not sold_goods or not comp_table:
-            return []
-
-        upd_sold_goods = []
-
-        # Т.к. мы не можем гарантировать, что вложенные списки - списки из 2ух элементов,
-        # то необходимо проверять их длину
-        # Коммерческое наименование приводить нужно к нижнему регистру, т.к. в сервисе товар может храниться как
-        # Aircraft - Рождественский Эль, а в таблице ЕГАИС как Aircraft - Рождественский эль
-        temp_comp_table = {str(good[0]).lower(): good[1] for good in comp_table if len(good) > 1}
-        for good in sold_goods:
-            if str(good.commercial_name).lower() in temp_comp_table:
-                upd_good = Good(good.commercial_name,
-                                temp_comp_table[str(good.commercial_name).lower()],
-                                good.quantity,
-                                good.price)
-            else:
-                upd_good = good
-            upd_sold_goods.append(upd_good)
-            self.sold_goods_egais = sorted(upd_sold_goods)
         return self.sold_goods_egais
 
     def get_retail_demand_by_period(self, start_period: datetime.datetime,
@@ -252,6 +210,41 @@ class MoySklad:
             return self.sold_goods
         return []
 
+    def _get_goods_compliance_egais(self, sold_goods: list[Good], comp_table: list[list[str]]) -> list[Good]:
+        """
+        Метод сравнивает два списка sold_goods и comp_table, возвращает новый sold_goods, c заполненными наименованиями
+        ЕГАИС
+        :param sold_goods: список товаров, каждый элемент - инстанс класса Good
+        :param comp_table:
+        :return: список товаров, c заполненным Good.egais_name, каждый элемент инстанс класса Good
+        """
+
+        # sold_goods - отсортированный список кортежей
+        # [(Наименование, Количество, Цена), (Наименование, Количество, Цена), ...]
+        # comp_table - отсортированный список списков
+        # [[Наименование, Наименование ЕГАИС], [Наименование, Наименование ЕГАИС], ...]
+        if not sold_goods or not comp_table:
+            return []
+
+        upd_sold_goods = []
+
+        # Т.к. мы не можем гарантировать, что вложенные списки - списки из 2ух элементов,
+        # то необходимо проверять их длину
+        # Коммерческое наименование приводить нужно к нижнему регистру, т.к. в сервисе товар может храниться как
+        # Aircraft - Рождественский Эль, а в таблице ЕГАИС как Aircraft - Рождественский эль
+        temp_comp_table = {str(good[0]).lower(): good[1] for good in comp_table if len(good) > 1}
+        for good in sold_goods:
+            if str(good.commercial_name).lower() in temp_comp_table:
+                upd_good = Good(good.commercial_name,
+                                temp_comp_table[str(good.commercial_name).lower()],
+                                good.quantity,
+                                good.price)
+            else:
+                upd_good = good
+            upd_sold_goods.append(upd_good)
+            self.sold_goods_egais = sorted(upd_sold_goods)
+        return self.sold_goods_egais
+
     def _exclude_words(self, goods: list[Good]) -> list[Good]:
         """ Метод копирует удаляет из входного списка элементы содержащие слова,
         описанные в файле moysklad_exclude_goods.txt
@@ -266,25 +259,24 @@ class MoySklad:
         exclude_words: list[str] = []
         exclude_words = utils.file_utils.read_file_txt(exclude_file_name)
 
-        if not exclude_words:
-            self.logger.error(f'Не удалось получить список из файла исключений {exclude_file_name}')
-            return []
-
         upd_goods = []
         if goods:
             for good in goods:
                 for exclude_word in exclude_words:
                     # если товра нужно исключить из списка
-                    if exclude_word.lower() not in good.commercial_name:
+                    if exclude_word.lower() not in good.commercial_name.lower():
                         # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
                         upd_goods.append(Good(good.commercial_name.split(' (')[0].replace('  ', ' ').strip(),
                                               good.egais_name,
                                               good.quantity,
                                               good.price))
-        upd_goods = sorted(upd_goods)
-        return self.sold_goods_egais
+            upd_goods = sorted(upd_goods)
+        return upd_goods
 
 
 if __name__ == '__main__':
     ms = MoySklad()
-    ms.get_token()
+    ms.get_token(request_new=False)
+    a = ms.get_retail_demand_by_period(datetime.datetime.today() - datetime.timedelta(days=1))
+
+    print(ms._token)
