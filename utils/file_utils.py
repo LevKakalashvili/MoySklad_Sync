@@ -54,3 +54,26 @@ def save_to_txt(file_name: str, data: list[ms.Good], add_date: bool = True) -> s
                 f.write(line_ + '\n')
 
     return file_name
+
+def read_file_txt(file_name: str) -> list[str]:
+    """
+        Метод возваращает список строк прочинаттынх из фалйа
+        :param file_name: Имя открываемого файла
+        :return: Список строк из файла file_name
+    """
+    if not file_name:
+        return []
+
+    exclude_words: set(str) = set()
+
+    try:
+        #self.logger.debug(f'Открываем файл исключений: {file_name}')
+        # заполняем список слов исключений
+        with open(file_name, 'r', encoding='utf-8') as file:
+            for line in file:
+                if not (line[0] in ['#', '', ' ', '\n']):
+                    exclude_words.add(line.replace('\n', '').lower())
+        return exclude_words
+    except FileNotFoundError:
+        # self.logger.debug(f'Не найден файл исключений: {file_name}')
+        return []

@@ -18,6 +18,8 @@ import moysklad.moysklad_urls as ms_urls
 import privatedata.moysklad_privatedata as ms_pvdata
 from urllib.parse import urljoin
 
+import utils.file_utils
+
 
 class Good(NamedTuple):
     """ Класс описывает структуру товара """
@@ -62,7 +64,6 @@ class MoySklad:
                 response.raise_for_status()
             except requests.RequestException as error:
                 self.logger.exception(f'Не удалось получить токен MoySklad: {error.args[0]}')
-                return False
 
             if response.json()['access_token'] != '':
                 self._token = response.json()['access_token']  # возвращаем токен
@@ -70,11 +71,65 @@ class MoySklad:
                 return True
             else:
                 self.logger.error('Не удалось получить токен MoySklad')
-                return False
         else:
             self.logger.debug(f'Получаем токен для работы с сервисом МойСклад из файла. request_new = {request_new}')
             self._token = ms_pvdata.TOKEN
             return True
+        return False
+
+    def get_retail_demand_by_period_egais(self, start_period: datetime.datetime,
+                                          end_period: datetime.datetime = None) -> list[Good]:
+        """ Получение отсортированный список розничных продаж за определенный период, для списания в ЕГАИС
+                :param start_period: начало запрашиваемого периода start_period 00:00:00
+                :param end_period: конец запрашиваемого периода end_period 23:59:00. Если не указа,
+                то считается, как start_period 23:59:00
+                :return:
+                    В случе успешного завершения возвращается список, элементов. Элемент - экземпляр класса Good
+                        Наименование товара (str)
+                        Количество проданного товара за заданный промежуток времени (float)
+                        Стоимость единицы товара (float)
+                    В случае ошибки возвращается пустой список.
+                :rtype: list[Good]
+                """
+        if end_period is None:
+            end_period = start_period
+
+        self.logger.debug(f'Получаем список товаров из МС, проданных за период '
+                          f'{start_period.strftime("%Y-%m-%d 00:00:00")} - '
+                          f'{end_period.strftime("%Y-%m-%d 23:59:00")}')
+
+        # Получаем список товаров из МС, проданных за период
+        self.get_retail_demand_by_period(start_period)
+
+        self.logger.debug(f'len(_sold_goods) = {len(self.sold_goods)}')
+
+        if self.sold_goods:
+            self.logger.debug('Получаем скорректированный список товаров, для списания в ЕГАИС')
+
+            # Получаем скорректированный список товаров, для списания в ЕГАИС
+            self._exclude_words(self.sold_goods)
+
+            self.logger.debug(f'len(_sold_goods_egais) = {len(self.sold_goods_egais)}')
+
+            if self.sold_goods_egais:
+
+                self.logger.debug('Получаем доступ к Google API')
+                gs = gs_class_lib.GoogleSheets()
+
+                if gs.service is not None:
+                    # получаем таблицу соответствий
+                    compl_table_egais = gs.get_data(gs_vars.SPREEDSHEET_ID_EGAIS,
+                                                    gs_vars.LIST_NAME_EGAIS,
+                                                    f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000')
+
+                    if compl_table_egais:
+
+                        self.logger.debug(f'Получили соответствие названий ЕГАИС: len(compl_table_egais) = '
+                                          f'{len(compl_table_egais)}')
+                        # соотносим проданные товары с наименованиями ЕГАИС
+                        self._get_goods_compliance_egais(self.sold_goods, compl_table_egais)
+
+        return self.sold_goods_egais
 
     def _get_goods_compliance_egais(self, sold_goods: list[Good], comp_table: list[list[str]]) -> list[Good]:
         """
@@ -111,60 +166,6 @@ class MoySklad:
             self.sold_goods_egais = sorted(upd_sold_goods)
         return self.sold_goods_egais
 
-    def get_retail_demand_by_period_egais(self, start_period: datetime.datetime,
-                                                end_period: datetime.datetime = None) -> list[Good]:
-        """ Получение отсортированный список розничных продаж за определенный период, для списания в ЕГАИС
-                :param start_period: начало запрашиваемого периода start_period 00:00:00
-                :param end_period: конец запрашиваемого периода end_period 23:59:00. Если не указа,
-                то считается, как start_period 23:59:00
-                :return:
-                    В случе успешного завершения возвращается список, элементов. Элемент - экземпляр класса Good
-                        Наименование товара (str)
-                        Количество проданного товара за заданный промежуток времени (float)
-                        Стоимость единицы товара (float)
-                    В случае ошибки возвращается пустой список.
-                :rtype: list[Good]
-                """
-        if end_period is None:
-            end_period = start_period
-
-        self.logger.debug(f'Получаем список товаров из МС, проданных за период '
-                          f'{start_period.strftime("%Y-%m-%d 00:00:00")} - '
-                          f'{end_period.strftime("%Y-%m-%d 23:59:00")}')
-
-        # Получаем список товаров из МС, проданных за период
-        self.get_retail_demand_by_period(start_period)
-
-        self.logger.debug(f'len(_sold_goods) = {len(self.sold_goods)}')
-
-        if self.sold_goods:
-            self.logger.debug('Получаем скорректированный список товаров, для списания в ЕГАИС')
-
-            # Получаем скорректированный список товаров, для списания в ЕГАИС
-            self._get_goods_for_egais(self.sold_goods)
-
-            self.logger.debug(f'len(_sold_goods_egais) = {len(self.sold_goods_egais)}')
-
-            if self.sold_goods_egais:
-
-                self.logger.debug('Получаем доступ к Google API')
-                gs = gs_class_lib.GoogleSheets()
-
-                if gs.service is not None:
-                    # получаем таблицу соответствий
-                    compl_table_egais = gs.get_data(gs_vars.SPREEDSHEET_ID_EGAIS,
-                                                    gs_vars.LIST_NAME_EGAIS,
-                                                    f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000')
-
-                    if compl_table_egais:
-
-                        self.logger.debug(f'Получили соответствие названий ЕГАИС: len(compl_table_egais) = '
-                                          f'{len(compl_table_egais)}')
-                        # соотносим проданные товары с наименованиями ЕГАИС
-                        self._get_goods_compliance_egais(self.sold_goods, compl_table_egais)
-
-        return self.sold_goods_egais
-
     def get_retail_demand_by_period(self, start_period: datetime.datetime,
                                     end_period: datetime.datetime = None) -> list[Good]:
         """ Получение списка розничных продаж за определенный период.
@@ -179,129 +180,108 @@ class MoySklad:
             В случае ошибки возвращается пустой список.
         :rtype: list[Good]
         """
-        if not self._token:
-            return []
-        # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
-        if end_period is None:
-            end_period = start_period
+        if self._token:
+            # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
+            if end_period is None:
+                end_period = start_period
 
-        # формат даты документа YYYY-MM-DD HH:MM:SS
-        date_filter_from = f'moment>{start_period.strftime("%Y-%m-%d 00:00:00")}'
-        date_filter_to = f'moment<{end_period.strftime("%Y-%m-%d 23:59:00")}'
+            # формат даты документа YYYY-MM-DD HH:MM:SS
+            date_filter_from = f'moment>{start_period.strftime("%Y-%m-%d 00:00:00")}'
+            date_filter_to = f'moment<{end_period.strftime("%Y-%m-%d 23:59:00")}'
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Lognex-Pretty-Print-JSON': 'true',
-            'Authorization': 'Bearer ' + self._token}
-        # Т.к. в запрашиваемом периоде может оказаться продаж больше, чем 100, а МойСклад отдает только страницами
-        # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос со смещением
-        # offset=200, следующий offset-300 и т.д.
-        need_request: bool = True
-        offset: int = 0
-        # словарь в котором будем хранить список всех проданных товаров, за выбранный промежуток времени
-        retail_demand_goods: dict[str, list[float]] = dict()
+            headers = {
+                'Content-Type': 'application/json',
+                'Lognex-Pretty-Print-JSON': 'true',
+                'Authorization': 'Bearer ' + self._token}
+            # Т.к. в запрашиваемом периоде может оказаться продаж больше, чем 100, а МойСклад отдает только страницами
+            # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос со смещением
+            # offset=200, следующий offset-300 и т.д.
+            need_request: bool = True
+            offset: int = 0
+            # словарь в котором будем хранить список всех проданных товаров, за выбранный промежуток времени
+            retail_demand_goods: dict[str, list[float]] = {}
 
-        while need_request:
-            # задаем фильтр
-            request_filter: dict[str, Any] = {
-                'filter': [
-                    f'organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}',
-                    date_filter_from,
-                    date_filter_to],
-                'offset': {100 * offset},
-                'expand': 'positions,positions.assortment',
-                'limit': '100'}
+            while need_request:
+                # задаем фильтр
+                request_filter: dict[str, Any] = {
+                    'filter': [
+                        f'organization={ms_urls.JSON_URL}entity/organization/{ms_urls.GEO_ORG_ID}',
+                        date_filter_from,
+                        date_filter_to],
+                    'offset': {100 * offset},
+                    'expand': 'positions,positions.assortment',
+                    'limit': '100'}
 
-            try:
-                response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'), request_filter, headers=headers)
-                response.raise_for_status()
-            except requests.RequestException as error:
-                self.logger.exception(f'Не удалось получить продажи из сервиса MoySklad: {error.args[0]}')
-                return []  # возвращаем пустой список
+                try:
+                    response = requests.get(urljoin(ms_urls.JSON_URL, 'entity/retaildemand'), request_filter, headers=headers)
+                    response.raise_for_status()
+                except requests.RequestException as error:
+                    self.logger.exception(f'Не удалось получить продажи из сервиса MoySklad: {error.args[0]}')
+                    return []  # возвращаем пустой список
 
-            # Проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива
-            # в ответе len(response.json()['rows']) - размер массива в ответе, если это число меньше,
-            # чем response.json()[ 'meta']['size'] то надо будет делать дополнительные запросы со смещением 100
-            # словарь для хранения списка проданных товаров. Ключ - наименование, значение - список [количество
-            # товара, цена]
+                # Проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива
+                # в ответе len(response.json()['rows']) - размер массива в ответе, если это число меньше,
+                # чем response.json()[ 'meta']['size'] то надо будет делать дополнительные запросы со смещением 100
+                # словарь для хранения списка проданных товаров. Ключ - наименование, значение - список [количество
+                # товара, цена]
 
-            # Смотрим, вернулись ли нам данные в ответе
-            # если в ответе есть данные
-            if response.json()['meta']['size'] > 0:
-                # проверяем нужно ли будет делать еще один запрос
-                if len(response.json()['rows']) < 100:
-                    need_request = False
-                # если нужно будет делать еще один запрос
+                # Смотрим, вернулись ли нам данные в ответе
+                # если в ответе есть данные
+                if response.json()['meta']['size'] > 0:
+                    # проверяем нужно ли будет делать еще один запрос
+                    if len(response.json()['rows']) < 100:
+                        need_request = False
+                    # если нужно будет делать еще один запрос
+                    else:
+                        offset += 1
                 else:
-                    offset += 1
-            else:
-                return []
-        # проходим по всем продажам и заполняем список с товарами
-        for sale in response.json()['rows']:
-            for sale_position in sale['positions']['rows']:
-                # проверяем наличие товара в словаре
-                if sale_position['assortment']['name'] in retail_demand_goods:
-                    # увеличиваем счетчик проданного товара
-                    retail_demand_goods[sale_position['assortment']['name']][0] += sale_position['quantity']
-                else:
-                    # добавляем товар в словарь проданных товаров
-                    retail_demand_goods[sale_position['assortment']['name']] = [sale_position['quantity'],
-                                                                                sale_position['price'] / 100]
+                    return []
+            # проходим по всем продажам и заполняем список с товарами
+            for sale in response.json()['rows']:
+                for sale_position in sale['positions']['rows']:
+                    # проверяем наличие товара в словаре
+                    if sale_position['assortment']['name'] in retail_demand_goods:
+                        # увеличиваем счетчик проданного товара
+                        retail_demand_goods[sale_position['assortment']['name']][0] += sale_position['quantity']
+                    else:
+                        # добавляем товар в словарь проданных товаров
+                        retail_demand_goods[sale_position['assortment']['name']] = [sale_position['quantity'],
+                                                                                    sale_position['price'] / 100]
 
-        self.sold_goods = sorted([Good(key, '', values[0], values[1]) for key, values in retail_demand_goods.items()])
-        return self.sold_goods
+            self.sold_goods = sorted([Good(key, '', values[0], values[1]) for key, values in retail_demand_goods.items()])
+            return self.sold_goods
+        return []
 
-    def _get_goods_for_egais(self, goods: list[Good]) -> list[Good]:
-        """ Метод удаляет из входного списка товаров, наименования перечисленные в файле moysklad_exclude_goods.txt
-                :param goods: Список товаров. Если передаваемый список - многомерный массив, то наименованием считается
-                0ой элемент, вложенного элемента list[i][0]
-                :return:
-                    В случе успешного завершения возвращается список, элементов Goods
-                    В случае ошибки возвращается пустой список.
-                :rtype: list
-         """
-        # список слов исключений
-        exclude_words = set()
+    def _exclude_words(self, goods: list[Good]) -> list[Good]:
+        """ Метод копирует удаляет из входного списка элементы содержащие слова,
+        описанные в файле moysklad_exclude_goods.txt
+        :return:
+            В случае успешного удаления возвращается True
+            В случае ошибки возвращается False
+        :rtype: list[Good]
+        """
+        exclude_file_name = os.path.join(os.path.dirname(__file__), 'moysklad_exclude_goods.txt')
 
-        if goods:
-            self.logger.debug(f'Входной список товаров: len(goods) = {len(goods)}')
-        else:
-            self.logger.error(f'Входной список товаров пустой: len(goods) = {len(goods)}')
+        # получаем список слов для исключений
+        exclude_words: list[str] = []
+        exclude_words = utils.file_utils.read_file_txt(exclude_file_name)
+
+        if not exclude_words:
+            self.logger.error(f'Не удалось получить список из файла исключений {exclude_file_name}')
             return []
 
+        upd_goods = []
         if goods:
-
-            exclude_file_name = os.path.join(os.path.dirname(__file__), 'moysklad_exclude_goods.txt')
-            self.logger.debug(
-                f'Открываем файл исключений: {exclude_file_name}')
-            try:
-                # заполняем список слов исключений
-                with open(exclude_file_name, 'r', encoding='utf-8') as file:
-                    for line in file:
-                        if not (line[0] in ['#', '', ' ', '\n']):
-                            exclude_words.add(line.replace('\n', '').lower())
-            except FileNotFoundError:
-                # запись в лог, файл не найден
-                self.logger.exception('Не удалось открыть файл исключений')
-                return []
-
-        if goods:
-            # убираем из списка товаров, товары которые попадают в список исключений
-            i = 0
-            while i < len(goods):
+            for good in goods:
                 for exclude_word in exclude_words:
-                    # Если список товаров передан списком кортежей [(Наименование, количество, цена), ... ]
-                    if goods[i].commercial_name.lower().find(exclude_word.lower()) != -1:
-                        goods.pop(i)
-                        i -= 1
-                # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
-                goods[i] = Good(goods[i].commercial_name.split(' (')[0].replace('  ', ' ').strip(),
-                                goods[i].egais_name,
-                                goods[i].quantity,
-                                goods[i].price)
-                i += 1
-
-        self.sold_goods_egais = sorted(goods)
+                    # если товра нужно исключить из списка
+                    if exclude_word.lower() not in good.commercial_name:
+                        # убираем из наименования товара все что содержится в скобках (OG, ABV, ..)
+                        upd_goods.append(Good(good.commercial_name.split(' (')[0].replace('  ', ' ').strip(),
+                                              good.egais_name,
+                                              good.quantity,
+                                              good.price))
+        upd_goods = sorted(upd_goods)
         return self.sold_goods_egais
 
 
