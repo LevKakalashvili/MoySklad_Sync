@@ -1,9 +1,8 @@
 import datetime
 import os
+from typing import Any
 
 import pandas as pd
-
-import moysklad.moysklad_class_lib as ms
 
 
 def remove_file(file_name: str) -> None:
@@ -11,7 +10,7 @@ def remove_file(file_name: str) -> None:
         os.remove(file_name)
 
 
-def save_to_excel(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
+def save_to_excel(file_name: str, data: list[Any], add_date: bool = True) -> str:
     """
      Функция сохранения в файл excel
     :param file_name:
@@ -39,7 +38,7 @@ def save_to_excel(file_name: str, data: list[ms.Good], add_date: bool = True) ->
     return file_name
 
 
-def save_to_txt(file_name: str, data: list[ms.Good], add_date: bool = True) -> str:
+def save_to_txt(file_name: str, data: list[Any], add_date: bool = True) -> str:
 
     if not data:
         return ''
