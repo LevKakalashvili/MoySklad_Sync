@@ -1,4 +1,4 @@
-# пример кода для тебеота взят https://habr.com/ru/post/580408/
+# пример кода для телебота взят https://habr.com/ru/post/580408/
 import datetime
 import logging.config
 import os
@@ -19,21 +19,25 @@ bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 @bot.message_handler(commands=['egais'])
 def start_message(message: telebot.types.Message) -> None:
-
     logger.debug('Приняли команду: ' + message.json['text'])
     bot.send_message(message.chat.id, 'Готовлю данные...')
 
     ms = ms_class_lib.MoySklad()
-    ms.get_token(request_new=False)
+
+    if os.environ.get('DEBUG') == 'True':
+        ms.get_token(request_new=True)
+    else:
+        ms.get_token(request_new=False)
 
     # получаем список товаров ЕГАИС, проданных за прошедший день
-    ms.get_retail_demand_by_period_egais(datetime.datetime.today() - datetime.timedelta(days=1))
+    date = datetime.datetime.today() - datetime.timedelta(days=3)
+    ms.get_retail_demand_by_period(ms_class_lib.GoodsType.alco, date)
 
-    if ms.sold_goods_egais:
+    if ms.sold_goods:
         # Сохраняем списания для ЕГАИС в файл ссылку xlsx, отправляем в чат
         send_file = utils.file_utils.save_to_excel(
             os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Списание_ЕГАИС'),  # путь до /MoySklad
-            ms.sold_goods_egais)
+            ms.sold_goods, date)
 
         if send_file != '':
             # отправляем файл
