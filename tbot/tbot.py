@@ -30,11 +30,11 @@ def start_message(message: telebot.types.Message) -> None:
         ms.get_token(request_new=False)
 
     # получаем список товаров ЕГАИС, проданных за прошедший день
-    date = datetime.datetime.today() - datetime.timedelta(days=3)
+    date = datetime.datetime.today() - datetime.timedelta(days=1)
     ms.get_retail_demand_by_period(ms_class_lib.GoodsType.alco, date)
 
     if ms.sold_goods:
-        # Сохраняем списания для ЕГАИС в файл ссылку xlsx, отправляем в чат
+        # Сохраняем списания для ЕГАИС в файл. Ссылку xlsx, отправляем в чат
         send_file = utils.file_utils.save_to_excel(
             os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Списание_ЕГАИС'),  # путь до /MoySklad
             ms.sold_goods, date)
