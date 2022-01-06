@@ -45,7 +45,7 @@ class Good:
         к строке вида
         4Пивовара - Black Jesus White Pepper.
 
-        :param name: наименование товара
+        :param name: Наименование товара.
         :type name: str
         :rtype: str
         """
@@ -164,7 +164,7 @@ class MoySklad:
                 self._get_goods_from_retail_demand(_type, response.json()['rows'])
         return None
 
-    def _need_save_position(self, _type: GoodsType, sale_position: List[Any]) -> bool:
+    def _need_save_position(self, _type: GoodsType, sale_position: Dict[str, Any]) -> bool:
 
         # attributes - список аттрибутов sale_position['assortment']['attributes']
         if _type == GoodsType.alco:
