@@ -1,18 +1,18 @@
 # пример кода для телебота взят https://habr.com/ru/post/580408/
 import datetime
 import logging.config
-import os
 
 import telebot
 
 import logger_config
-import moysklad.moysklad_class_lib as ms_class_lib
+from moysklad.moysklad_class_lib import ms, GoodsType
 from privatedata.tbot_privatedata import TOKEN
 import utils.file_utils
 
+# Инициализация
 logging.config.dictConfig(logger_config.LOGGING_CONF)
+# Логгер для Telegram бота
 logger = logging.getLogger('tbot')
-
 # создаем бота
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
@@ -22,29 +22,20 @@ def start_message(message: telebot.types.Message) -> None:
     logger.debug('Приняли команду: ' + message.json['text'])
     bot.send_message(message.chat.id, 'Готовлю данные...')
 
-    ms = ms_class_lib.MoySklad()
+    # получаем ссылку на файл товаров ЕГАИС, проданных за прошедший день
+    file = ms.save_to_file_retail_demand_by_period(
+        good_type=GoodsType.alco,
+        start_period=datetime.datetime.today() - datetime.timedelta(days=1),
+        end_period=None
+    )
 
-    if os.environ.get('DEBUG') == 'True':
-        ms.get_token(request_new=True)
-    else:
-        ms.get_token(request_new=False)
-
-    # получаем список товаров ЕГАИС, проданных за прошедший день
-    date = datetime.datetime.today() - datetime.timedelta(days=1)
-    ms.get_retail_demand_by_period(ms_class_lib.GoodsType.alco, date)
-
-    if ms.sold_goods:
-        # Сохраняем списания для ЕГАИС в файл. Ссылку xlsx, отправляем в чат
-        send_file = utils.file_utils.save_to_excel(
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Списание_ЕГАИС'),  # путь до /MoySklad
-            ms.sold_goods, date)
-
-        if send_file != '':
+    if file:
+        if file != '':
             # отправляем файл
-            bot.send_document(message.chat.id, open(send_file, 'rb'))
-            logger.debug(f'Отправили файл в чат {send_file}')
+            bot.send_document(message.chat.id, open(file, 'rb'))
+            logger.debug(f'Отправили файл в чат {file}')
             # удаляем отправленный файл с диска
-            utils.file_utils.remove_file(send_file)
+            utils.file_utils.remove_file(file)
         else:
             bot.send_message(message.chat.id, 'Не удалось подготовить файл')
             logger.debug('Не удалось подготовить файл: нет имени файла')

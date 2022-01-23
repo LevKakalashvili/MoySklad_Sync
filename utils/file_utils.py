@@ -5,8 +5,6 @@ from typing import Any, List
 
 import pandas as pd
 
-import moysklad.moysklad_class_lib as ms_class_lib
-
 
 def remove_file(file_name: str) -> None:
     """Функция удаления файла."""
@@ -14,7 +12,7 @@ def remove_file(file_name: str) -> None:
         os.remove(file_name)
 
 
-def save_to_excel(file_name: str, data: list[ms_class_lib.Good], date: datetime.datetime, add_date: bool = True) -> str:
+def save_to_excel(file_name: str, data: list[Any], date: datetime.datetime, add_date: bool = True) -> str:
     """Функция сохранения в файл excel.
 
     :param file_name: Имя файла.
@@ -37,7 +35,7 @@ def save_to_excel(file_name: str, data: list[ms_class_lib.Good], date: datetime.
 
     # пишем данные в файл
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame([good.to_tuple for good in data])
     df.to_excel(file_name, sheet_name='Списания ЕГАИС', index=False, header=False)
     return file_name
 

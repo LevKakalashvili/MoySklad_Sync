@@ -1,7 +1,9 @@
 """Модуль для работы с Google Sheets"""
 import os
 import logging.config
+import logging
 from typing import Any
+
 
 import googleapiclient.discovery  # pip install google-api-python-client
 import httplib2  # pip install httplib2
@@ -10,14 +12,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 import googledrive.googlesheets_vars as gs_vars
 import logger_config
 
+logging.config.dictConfig(logger_config.LOGGING_CONF)
+# Логгер для GoogleDrive
+gs_logger = logging.getLogger('google')
 
 class GoogleSheets:
     """Класс для чтения данных из Google Sheets"""
 
     def __init__(self) -> None:
-        logging.config.dictConfig(logger_config.LOGGING_CONF)
-        self.logger = logging.getLogger('google')
-
         self.service: Any = None  # сервисный объект для работы с Google API
         self.get_access()
 
@@ -66,7 +68,6 @@ class GoogleSheets:
         while not values[i]:
             i += 1
         return values[i:]
-
 
 if __name__ == '__main__':
     gs = GoogleSheets()
