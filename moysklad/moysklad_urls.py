@@ -49,9 +49,7 @@ def get_headers(token: str = '') -> Dict[str, Any]:
             'Authorization': 'Bearer ' + token}
     else:
         pvd = f'{ms_pvdata.USER}:{ms_pvdata.PASSWORD}'.encode()
-        headers = {
-            'Authorization': f'Basic{base64.b64encode(pvd)}'
-        }
+        headers = dict(Authorization=f'Basic{base64.b64encode(pvd)}')
     return headers
 
 

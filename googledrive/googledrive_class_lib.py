@@ -16,6 +16,7 @@ logging.config.dictConfig(logger_config.LOGGING_CONF)
 # Логгер для GoogleDrive
 gs_logger = logging.getLogger('google')
 
+
 class GoogleSheets:
     """Класс для чтения данных из Google Sheets"""
 
@@ -37,10 +38,10 @@ class GoogleSheets:
         http_auth = credentials.authorize(httplib2.Http())
         try:
             self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
-            self.logger.debug('Получили доступ к Google API')
+            gs_logger.debug('Получили доступ к Google API')
             return True
         except googleapiclient.discovery.MutualTLSChannelError as error:
-            self.logger.error(f'Не удалось создать сервисный объект для работы с Google API: {error.args[0]}')
+            gs_logger.error(f'Не удалось создать сервисный объект для работы с Google API: {error.args[0]}')
             return False
 
     def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list[list[str]]:

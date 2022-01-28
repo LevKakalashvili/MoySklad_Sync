@@ -13,7 +13,7 @@ import utils.file_utils
 logging.config.dictConfig(logger_config.LOGGING_CONF)
 # Логгер для Telegram бота
 logger = logging.getLogger('tbot')
-# создаем бота
+# Создаем бота
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 
@@ -22,7 +22,7 @@ def start_message(message: telebot.types.Message) -> None:
     logger.debug('Приняли команду: ' + message.json['text'])
     bot.send_message(message.chat.id, 'Готовлю данные...')
 
-    # получаем ссылку на файл товаров ЕГАИС, проданных за прошедший день
+    # Получаем ссылку на файл товаров ЕГАИС, проданных за прошедший день.
     file = ms.save_to_file_retail_demand_by_period(
         good_type=GoodsType.alco,
         start_period=datetime.datetime.today() - datetime.timedelta(days=1),
@@ -31,7 +31,7 @@ def start_message(message: telebot.types.Message) -> None:
 
     if file:
         if file != '':
-            # отправляем файл
+            # Отправляем файл
             bot.send_document(message.chat.id, open(file, 'rb'))
             logger.debug(f'Отправили файл в чат {file}')
             # удаляем отправленный файл с диска

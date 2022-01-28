@@ -1,8 +1,9 @@
 """В модуле хранятся описание классов."""
 import datetime
 import os
+from collections import OrderedDict
 from decimal import Decimal
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -20,6 +21,7 @@ from utils.file_utils import save_to_excel
 logging.config.dictConfig(logger_config.LOGGING_CONF)
 # Логгер для МойСклад
 logger = logging.getLogger('moysklad')
+
 
 class GoodsType(Enum):
     """Перечисление для определения, какой тип товаров необходимо получить.
@@ -62,7 +64,7 @@ class Good:
 
     @property
     def to_tuple(self) -> Tuple[str, str, int, Decimal]:
-        return (self.commercial_name, self.egais_name, self.quantity, self.price)
+        return self.commercial_name, self.egais_name, self.quantity, self.price
 
 
 @dataclass()
@@ -119,6 +121,10 @@ class MoySklad:
         :param start_period: начало запрашиваемого периода start_period 00:00:00.
         :param end_period: конец запрашиваемого периода end_period 23:59:00.
         """
+        # Если токен не получен, возвращаем пустой список
+        if not self._token:
+            return []
+
         if end_period is None:
             end_period = start_period
 
@@ -148,7 +154,8 @@ class MoySklad:
         start_period: datetime.datetime,
         end_period: datetime.datetime,
     ) -> List[Good]:
-        """Метод заполняет поле sold_goods вызываемого инстанса класса, проданными товарами. Тип товаров определяться параметром good_type.
+        """Метод заполняет поле sold_goods вызываемого инстанса класса, проданными товарами. Тип товаров определятся
+        параметром good_type.
 
         :param good_type: Тип запрашиваемых товаров из сервиса.
         :type good_type: Перечисление типа товаров.
@@ -189,7 +196,8 @@ class MoySklad:
 
         return []
 
-    def _need_save_position(self, good_type: GoodsType, sale_position: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _need_save_position(good_type: GoodsType, sale_position: Dict[str, Any]) -> bool:
         # attributes - список аттрибутов sale_position['assortment']['attributes']
         if good_type == GoodsType.alco:
             # Если в сервисе не указан ни оди из аттрибутов "Розлив" - не указан, "Алкогольная продукция" - не отмечено,
@@ -200,8 +208,9 @@ class MoySklad:
                 return False
 
             # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
-            # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. Т.к. аттрибут
+            # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
             # "Алкогольная продукция", является обязательным для всех товаров
+            #
             # Признак алкогольной продукции
             # дополнительное поле "Алкогольная продукция" в массиве ['attributes'] - элемент с индексом 1
             # True - чек-бокс установлен, False - не установлен
@@ -224,7 +233,7 @@ class MoySklad:
         :params ms_retail_demands: Список розничных продаж, возвращаемый в ответе сервиса (response.json()['rows']),
          при запросе https://online.moysklad.ru/api/remap/1.2/entity/retaildemand
         """
-        goods: Dict[str, Good] = {}
+        goods: Dict[str, Good] = OrderedDict()
         for retail_demand in ms_retail_demands:
             for sale_position in retail_demand['positions']['rows']:
                 if good_type == GoodsType.alco:
@@ -238,8 +247,8 @@ class MoySklad:
 
                     good = Good(
                         commercial_name=sale_position['assortment']['name'],
-                        quantity=int(sale_position['quantity']), #  sale_position['quantity'] - float
-                        price=Decimal(sale_position['price'] / 100) #  sale_position['price'] - float
+                        quantity=int(sale_position['quantity']),  # sale_position['quantity'] - float
+                        price=Decimal(sale_position['price'] / 100)  # sale_position['price'] - float
                     )
 
                     # если товар уже есть в списке проданных
@@ -250,9 +259,10 @@ class MoySklad:
                         # добавляем товар в словарь проданных товаров
                         goods[good.commercial_name] = good
         # сортируем словарь и преобразуем в список
-        return sorted(goods.values())
+        return [good for name, good in sorted(goods.items())]
 
-    def _fill_egais_name(self, comp_table: list[list[str]], sold_goods: list[Good]) -> None:
+    @staticmethod
+    def _fill_egais_name(comp_table: list[list[str]], sold_goods: list[Good]) -> None:
         """Метод заполняет поле ЕГАИС наименование у товара, на основе таблицы соответствий.
 
         :param comp_table: Таблица соответствий коммерческое наименование - наименование ЕГАИС.
@@ -279,7 +289,6 @@ class MoySklad:
                 # обновляем ЕГАИС наименование
                 good.egais_name = eagis_name
 
-
     def save_to_file_retail_demand_by_period(self,
                                              good_type: GoodsType,
                                              start_period: datetime.datetime,
@@ -287,14 +296,16 @@ class MoySklad:
                                              ) -> str:
         """Метод сохраняет в файл .*xlsx список проданных товаров за определенный период.
 
-            :param good_type: Тип сохраняемых товаров.
-            :param start_period: Начало запрашиваемого периода start_period 00:00:00.
-            :param end_period: Конец запрашиваемого периода end_period 23:59:00. Если не указана, то считается, как start_period 23:59:00.
+        :param good_type: Тип сохраняемых товаров.
+        :param start_period: Начало запрашиваемого периода start_period 00:00:00.
+        :param end_period: Конец запрашиваемого периода end_period 23:59:00. Если не указана, то считается, как start_period 23:59:00.
 
-            :return: Путь к файлу со списком проданных товаров.
-            В случае успешного сохранения возвращается ссылка на файл.
-            В случае ошибки возвращается пустая строка.
+        :return: Путь к файлу со списком проданных товаров.
+        В случае успешного сохранения возвращается ссылка на файл.
+        В случае ошибки возвращается пустая строка.
         """
+
+        # Если токен не получен, возвращаем пустую строку
         if not self._token:
             return ''
 
@@ -302,20 +313,22 @@ class MoySklad:
         sold_goods: List[Good] = self.get_retail_demand_by_period(
             good_type=good_type,
             start_period=start_period,
-            end_period=end_period
-        )
+            end_period=end_period)
 
         if not sold_goods:
             return ''
 
         # Сохраняем списания для ЕГАИС в файл. Ссылку xlsx, возвращаем
         send_file = save_to_excel(
-                os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Списание_ЕГАИС'),  # путь до /MoySklad
-                sold_goods[:], start_period - end_period)
+            os.path.join(os.path.dirname(
+                os.path.dirname(__file__)),
+                'Списание_ЕГАИС'),  # путь до /MoySklad
+            sold_goods[:],
+            start_period - end_period if end_period is not None else start_period)
         return send_file
 
 
 # Инициализация
-# Выполняется один раз при импорте
+# Выполняется один раз при импорте модуля
 ms = MoySklad()
 ms.set_token(request_new=True)
