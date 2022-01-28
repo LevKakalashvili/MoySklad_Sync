@@ -41,16 +41,18 @@ def get_headers(token: str = '') -> Dict[str, Any]:
         Если token пустой, то возвратится словарь для запроса token.
         Если не пустой возвратиться словарь для запросов сущностей МойСклад
     """
-    _headers: Dict[str, Any]
+    headers: Dict[str, Any]
     if token:
-        _headers = {
+        headers = {
             'Content-Type': 'application/json',
             'Lognex-Pretty-Print-JSON': 'true',
             'Authorization': 'Bearer ' + token}
     else:
         pvd = f'{ms_pvdata.USER}:{ms_pvdata.PASSWORD}'.encode()
-        _headers = {'Authorization': f'Basic{base64.b64encode(pvd)}'}
-    return _headers
+        headers = {
+            'Authorization': f'Basic{base64.b64encode(pvd)}'
+        }
+    return headers
 
 
 def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_period: datetime = None) -> Url:
