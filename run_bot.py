@@ -1,9 +1,5 @@
-import tbot.tbot
-
-
-def run_bot() -> None:
-    tbot.tbot.run()
+import tbot.tbot as telegram_bot
 
 
 if __name__ == '__main__':
-    run_bot()
+    telegram_bot.run()

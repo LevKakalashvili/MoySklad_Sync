@@ -1,31 +1,33 @@
-"""
-Модуль для работы с Google Sheets
-"""
+"""Модуль для работы с Google Sheets"""
+import os
+import logging.config
+import logging
 from typing import Any
+
 
 import googleapiclient.discovery  # pip install google-api-python-client
 import httplib2  # pip install httplib2
 from oauth2client.service_account import ServiceAccountCredentials
+
 import googledrive.googlesheets_vars as gs_vars
-import os
-import logging.config
 import logger_config
+
+logging.config.dictConfig(logger_config.LOGGING_CONF)
+# Логгер для GoogleDrive
+gs_logger = logging.getLogger('google')
 
 
 class GoogleSheets:
-    """ Класс методы для чтения данных из Google Sheets"""
+    """Класс для чтения данных из Google Sheets"""
 
     def __init__(self) -> None:
-        logging.config.dictConfig(logger_config.LOGGING_CONF)
-        self.logger = logging.getLogger("google")
-
         self.service: Any = None  # сервисный объект для работы с Google API
         self.get_access()
 
     def get_access(self) -> bool:
-        """Метод получения доступа сервисного объекта Google API
-        :return: Возвращает True если получилось подключиться к Google API, False в противном случае
-        """
+        """"Метод получения доступа сервисного объекта Google API
+        :return: Возвращает True если получилось подключиться к Google API, False в противном случае"""
+
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
             # все приватные данные храним в папке /MoySklad_Sync/privatedata
@@ -36,10 +38,10 @@ class GoogleSheets:
         http_auth = credentials.authorize(httplib2.Http())
         try:
             self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
-            self.logger.debug(f"Получили доступ к Google API")
+            gs_logger.debug('Получили доступ к Google API')
             return True
-        except Exception as e:
-            self.logger.error(f"Не удалось создать сервисный объект для работы с Google API: {e.args[0]}")
+        except googleapiclient.discovery.MutualTLSChannelError as error:
+            gs_logger.error(f'Не удалось создать сервисный объект для работы с Google API: {error.args[0]}')
             return False
 
     def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> list[list[str]]:
@@ -67,7 +69,6 @@ class GoogleSheets:
         while not values[i]:
             i += 1
         return values[i:]
-
 
 if __name__ == '__main__':
     gs = GoogleSheets()
