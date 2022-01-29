@@ -128,7 +128,7 @@ class MoySklad:
             end_period = start_period
 
         # Получаем список товаров из МС, проданных за период
-        sold_goods: list[Good] = self._get_retail_demand_by_period(good_type, start_period, end_period)
+        sold_goods: List[Good] = self._get_retail_demand_by_period(good_type, start_period, end_period)
         if not sold_goods:
             return []
         gs = gs_class_lib.GoogleSheets()
@@ -167,7 +167,7 @@ class MoySklad:
                 Количество проданного товара за заданный промежуток времени (float)
                 Стоимость единицы товара (float)
             В случае ошибки возвращается пустой список.
-        :rtype: list[Good]
+        :rtype: List[Good]
         """
         if not self._token:
             return []
@@ -261,7 +261,7 @@ class MoySklad:
         return [good for name, good in sorted(goods.items())]
 
     @staticmethod
-    def _fill_egais_name(comp_table: list[list[str]], sold_goods: list[Good]) -> None:
+    def _fill_egais_name(comp_table: List[List[str]], sold_goods: List[Good]) -> None:
         """Метод заполняет поле ЕГАИС наименование у товара, на основе таблицы соответствий.
 
         :param comp_table: Таблица соответствий коммерческое наименование - наименование ЕГАИС.

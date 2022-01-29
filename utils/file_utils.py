@@ -12,7 +12,7 @@ def remove_file(file_name: str) -> None:
         os.remove(file_name)
 
 
-def save_to_excel(file_name: str, data: list[Any], date: datetime.datetime, add_date: bool = True) -> str:
+def save_to_excel(file_name: str, data: List[Any], date: datetime.datetime, add_date: bool = True) -> str:
     """Функция сохранения в файл excel.
 
     :param file_name: Имя файла.
@@ -40,7 +40,7 @@ def save_to_excel(file_name: str, data: list[Any], date: datetime.datetime, add_
     return file_name
 
 
-def save_to_txt(file_name: str, data: list[Any], add_date: bool = True) -> str:
+def save_to_txt(file_name: str, data: List[Any], add_date: bool = True) -> str:
     """Функция сохранения в текстовый файл."""
     if not data:
         return ''
@@ -57,7 +57,7 @@ def save_to_txt(file_name: str, data: list[Any], add_date: bool = True) -> str:
     return file_name
 
 
-def read_file_txt(file_name: str) -> list[str]:
+def read_file_txt(file_name: str) -> List[str]:
     """Метод возвращает список строк прочитанных из файла.
 
     :param file_name: Имя открываемого файла

@@ -1,0 +1,5 @@
+crontab -e
+*/5 * * * * python3 /var/geo/MoySklad_Sync/run_by_schedule.py
+
+Просмотр журнала
+grep CRON /var/log/syslog
