@@ -1,9 +1,8 @@
 """Модуль для работы с Google Sheets"""
-import os
-import logging.config
 import logging
+import logging.config
+import os
 from typing import Any
-
 
 import googleapiclient.discovery  # pip install google-api-python-client
 import httplib2  # pip install httplib2
