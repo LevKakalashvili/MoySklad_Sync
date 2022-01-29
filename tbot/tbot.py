@@ -1,13 +1,13 @@
-# пример кода для телебота взят https://habr.com/ru/post/580408/
+# пример кода для телеграм бота взят https://habr.com/ru/post/580408/
 import datetime
 import logging.config
 
 import telebot
+from privatedata.tbot_privatedata import TOKEN
 
 import logger_config
-from moysklad.moysklad_class_lib import ms, GoodsType
-from privatedata.tbot_privatedata import TOKEN
 import utils.file_utils
+from moysklad.moysklad_class_lib import ms, GoodsType
 
 # Инициализация
 logging.config.dictConfig(logger_config.LOGGING_CONF)
@@ -32,6 +32,7 @@ def start_message(message: telebot.types.Message) -> None:
     if file:
         if file != '':
             # Отправляем файл
+            bot.send_message(message.chat.id, 'Касатики, вот файл с продажами за вчера.')
             bot.send_document(message.chat.id, open(file, 'rb'))
             logger.debug(f'Отправили файл в чат {file}')
             # удаляем отправленный файл с диска
