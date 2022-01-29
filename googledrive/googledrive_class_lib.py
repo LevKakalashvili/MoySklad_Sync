@@ -2,7 +2,7 @@
 import logging
 import logging.config
 import os
-from typing import Any
+from typing import Any, List
 
 import googleapiclient.discovery  # pip install google-api-python-client
 import httplib2  # pip install httplib2
