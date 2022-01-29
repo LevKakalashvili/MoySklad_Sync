@@ -1,15 +1,15 @@
 import time
+from enum import Enum
+from typing import Dict
 
+from privatedata.kontrurmarket_privatedata import USER, PASSWORD
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from selenium.webdriver.common.by import By
-from typing import Dict
-from enum import Enum
 
 from konturmarket.konturmarket_urls import EGAIS_ASSORTMENT_URL
-from privatedata.kontrurmarket_privatedata import USER, PASSWORD
 from konturmarket_class_lib import GoodEGAIS
 
 
