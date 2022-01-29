@@ -1,14 +1,13 @@
 """В модуле описаны классы для работы с сервисом Контур.Маркет https://market.kontur.ru/"""
 import json
 from dataclasses import dataclass
-from pydantic import BaseModel, Field
-
 from typing import List, Tuple
 
+import privatedata.kontrurmarket_privatedata as km_pvdata
 import requests
+from pydantic import BaseModel, Field
 
 from konturmarket_urls import Url, UrlType, get_url
-import privatedata.kontrurmarket_privatedata as km_pvdata
 
 session = requests.Session()
 
