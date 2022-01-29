@@ -1,0 +1,1 @@
+C:\my_python_projects\MoySklad_Sync\venv\Scripts\python.exe C:\my_python_projects\MoySklad_Sync\run_by_schedule.py
