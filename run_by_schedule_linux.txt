@@ -1,5 +1,7 @@
 crontab -e
-*/5 * * * * python3 /var/geo/MoySklad_Sync/run_by_schedule.py
+sudo crontab -l - посмотреть крон задачи
+каждый день в 23/00
+0 23 * * * python3 /var/geo/MoySklad_Sync/run_by_schedule.py
 
 Просмотр журнала
 grep CRON /var/log/syslog
