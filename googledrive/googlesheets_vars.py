@@ -16,7 +16,15 @@ FIRST_CELL_GOODS_AVAILABILITY = 'A2'  # первая ячейка с данны�
 LAST_COLUMN_GOODS_AVAILABILITY = 'G'  # последний столбец с данными в таблице "Наличие"
 
 SPREEDSHEET_ID_EGAIS = '1xY9W8a9fPazRW1Nc_K-5CkEwm4Q28jtsv_t2-Z0tiAE'
+
+# Лист "Соответсвия ЕГАИС"
 LIST_ID_EGAIS = '0'
 LIST_NAME_EGAIS = 'Соответсвия ЕГАИС'
 FIRST_CELL_EGAIS = 'A1'
 LAST_COLUMN_EGAIS = 'B'
+
+# Лист "ЕГАИС справочник"
+LIST_ID_EGAIS_ASSORTMNET = '870832055'
+LIST_NAME_EGAIS_ASSORTMNET = 'ЕГАИС справочник'
+FIRST_CELL_EGAIS_ASSORTMNET = 'A2'
+LAST_COLUMN_EGAIS_ASSORTMNET = 'D'
