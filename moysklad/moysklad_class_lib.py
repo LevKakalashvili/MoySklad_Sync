@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import privatedata.moysklad_privatedata as ms_pvdata
 import requests
 
-import googledrive.googledrive_class_lib as gs_class_lib
+from googledrive.googledrive_class_lib import googlesheets
 import googledrive.googlesheets_vars as gs_vars
 import logger_config
 import moysklad.moysklad_urls as ms_urls
@@ -120,8 +120,8 @@ class MoySklad:
         :param start_period: начало запрашиваемого периода start_period 00:00:00.
         :param end_period: конец запрашиваемого периода end_period 23:59:00.
         """
-        # Если токен не получен, возвращаем пустой список
-        if not self._token:
+        # Если токен не получен или не установлено соединение с GoogleSheets через API, возвращаем пустой список.
+        if not self._token or not googlesheets.connection_OK:
             return []
 
         if end_period is None:
@@ -131,17 +131,17 @@ class MoySklad:
         sold_goods: List[Good] = self._get_retail_demand_by_period(good_type, start_period, end_period)
         if not sold_goods:
             return []
-        gs = gs_class_lib.GoogleSheets()
 
-        if gs.service is None:
-            return []
+        # gs = gs_class_lib.GoogleSheets()
+        #
+        # if gs.service is None:
+        #     return []
 
         # получаем таблицу соответствий
-        compl_table_egais = gs.get_data(
-            gs_vars.SPREEDSHEET_ID_EGAIS,
-            gs_vars.LIST_NAME_EGAIS,
-            f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000',
-        )
+        compl_table_egais = googlesheets.get_data(spreadsheets_id= gs_vars.SPREEDSHEET_ID_EGAIS,
+                                                  list_name=gs_vars.LIST_NAME_EGAIS,
+                                                  list_range=f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000'
+                                                  )
         # заполняем поле наименование ЕГАИС, проданных товаров
         self._fill_egais_name(compl_table_egais, sold_goods[:])
 
