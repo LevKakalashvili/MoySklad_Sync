@@ -48,6 +48,10 @@ class Good:
         if self.convert_name:
             self.commercial_name = self._convert_name(self.commercial_name)
 
+    @property
+    def to_tuple(self) -> Tuple[str, str, int, Decimal]:
+        return self.commercial_name, self.egais_name, self.quantity, self.price
+
     @staticmethod
     def _convert_name(name: str) -> str:
         """Метод преобразует строку наименования вида.
@@ -60,10 +64,6 @@ class Good:
         :rtype: str
         """
         return name.split(' (')[0].replace('  ', ' ').strip()
-
-    @property
-    def to_tuple(self) -> Tuple[str, str, int, Decimal]:
-        return self.commercial_name, self.egais_name, self.quantity, self.price
 
 
 @dataclass()
@@ -138,9 +138,9 @@ class MoySklad:
         #     return []
 
         # получаем таблицу соответствий
-        compl_table_egais = googlesheets.get_data(spreadsheets_id= gs_vars.SPREEDSHEET_ID_EGAIS,
+        compl_table_egais = googlesheets.get_data(spreadsheets_id=gs_vars.SPREEDSHEET_ID_EGAIS,
                                                   list_name=gs_vars.LIST_NAME_EGAIS,
-                                                  list_range=f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000'
+                                                  list_range=f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}2000',
                                                   )
         # заполняем поле наименование ЕГАИС, проданных товаров
         self._fill_egais_name(compl_table_egais, sold_goods[:])
@@ -169,19 +169,16 @@ class MoySklad:
             В случае ошибки возвращается пустой список.
         :rtype: List[Good]
         """
-        if not self._token:
-            return []
 
         # Получаем url для отправки запроса в сервис
         url: ms_urls.Url = ms_urls.get_url(ms_urls.UrlType.retail_demand, start_period, end_period)
         # Получаем заголовки для запроса в сервис
         header: Dict[str, Any] = ms_urls.get_headers(self._token)
-        try:
-            response = requests.get(url.url, url.request_filter, headers=header)
-            response.raise_for_status()
-        except requests.RequestException as error:
-            logger.exception(f'Не удалось получить продажи из сервиса MoySklad: {error.args[0]}')
-            return []  # возвращаем пустой список
+        response = requests.get(url.url, url.request_filter, headers=header)
+        if not response.ok:
+            logger.exception('Не удалось получить продажи из сервиса MoySklad')
+            # возвращаем пустой список
+            return []
 
         # Проверяем получили ли в ответе не пустой список продаж response.json()['meta']['size'] - размер массива
         # в ответе len(response.json()['rows']) - размер массива в ответе, если это число меньше,
@@ -192,7 +189,6 @@ class MoySklad:
         # Смотрим, вернулись ли нам данные в ответе
         if response.json()['meta']['size'] > 0:
             return self._get_goods_from_retail_demand(good_type, response.json()['rows'])
-
         return []
 
     @staticmethod
@@ -247,7 +243,7 @@ class MoySklad:
                     good = Good(
                         commercial_name=sale_position['assortment']['name'],
                         quantity=int(sale_position['quantity']),  # sale_position['quantity'] - float
-                        price=Decimal(sale_position['price'] / 100)  # sale_position['price'] - float
+                        price=Decimal(sale_position['price'] / 100),  # sale_position['price'] - float
                     )
 
                     # если товар уже есть в списке проданных
@@ -291,7 +287,7 @@ class MoySklad:
     def save_to_file_retail_demand_by_period(self,
                                              good_type: GoodsType,
                                              start_period: datetime.datetime,
-                                             end_period: Optional[datetime.datetime] = None
+                                             end_period: Optional[datetime.datetime] = None,
                                              ) -> str:
         """Метод сохраняет в файл .*xlsx список проданных товаров за определенный период.
 

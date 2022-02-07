@@ -31,7 +31,7 @@ def send_sales_file_to_telegram(chat_id: int) -> bool:
         utils.file_utils.remove_file(file_name)
         return True
     else:
-        bot.send_message(chat_id, 'Не удалось подготовить файл')
+        bot.send_message(chat_id, 'Не удалось подготовить файл. Возможно сегодня еще и не было продаж!')
     return False
 
 
