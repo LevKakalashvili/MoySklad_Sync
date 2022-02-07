@@ -59,13 +59,13 @@ class KonturMarket:
     def get_egais_assortment() -> List[GoodEGAIS]:
         """Метод возвращает список инстансов GoodEGAIS, полученных из сервиса."""
 
+        goods_list: List[GoodEGAIS] = []
         url: Url = get_url(UrlType.egais_assortment)
         response = session.get(url.url)
 
         goods = dict(response.json()).get('list')
         # Если получили успешный ответ и есть список товаров
         if response.ok and goods:
-            goods_list: List[GoodEGAIS]
             # Проходим по всему списку товаров, наименований.
             for good in goods:
                 # Получаем словарь с информацией о товаре
