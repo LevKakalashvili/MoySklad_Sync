@@ -1,0 +1,6 @@
+Запуск виртуальной среды из папки проекта
+/bin/bash --rcfile env/bin/activate
+
+Запуск бота в фоне
+python3 run_bot.py &
+
