@@ -1,7 +1,7 @@
 crontab -e
 sudo crontab -l - посмотреть крон задачи
 каждый день в 23/00
-0 23 * * * python3 /var/geo/MoySklad_Sync/run_by_schedule.py
+0 23 * * * /var/geo/MoySklad_Sync/env/bin/python3 /var/geo/MoySklad_Sync/run_by_schedule.py
 
 Просмотр журнала
 grep CRON /var/log/syslog
